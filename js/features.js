@@ -21,11 +21,19 @@ function shop(){
   if(p.coins<entry.price){App.toast("Not enough coins");return}
   p.coins-=entry.price;p[field].push(id);await App.save();App.toast("Purchased "+entry.name);shop();
  });
- const bag=$("categoryBags");bag.innerHTML=categories.map(([name,items],ci)=>'<button class="btn" data-ci="'+ci+'">'+name+' Bag · '+bagPrices[ci]+' coins</button>').join(" ");
+ const bag=$("categoryBags");
+ const rarities=["Common","Uncommon","Rare","Epic","Legendary","Secret"];
+ bag.innerHTML=categories.map(([name],ci)=>'<h4>'+name+' Bags</h4><div class="bags">'+rarities.map((tier,t)=>'<button class="bag" data-ci="'+ci+'" data-tier="'+t+'"><b>'+tier+'</b><small>'+bagPrices[ci]*(t+1)+' coins</small></button>').join("")+'</div>').join("");
  bag.querySelectorAll("button").forEach(btn=>btn.onclick=async()=>{
-  const ci=+btn.dataset.ci,cost=bagPrices[ci];if(p.coins<cost){App.toast("Not enough coins");return}
-  const items=categories[ci][1],weights=[55,25,12,5,2,1],eligible=items.map((x,i)=>({x,w:weights[Math.min(5,x.rar||0)]}));let total=eligible.reduce((n,y)=>n+y.w,0),roll=Math.random()*total;let result=eligible[0].x;for(const y of eligible){roll-=y.w;if(roll<=0){result=y.x;break}}
-  p.coins-=cost;p[result.field]=p[result.field]||[];if(p[result.field].includes(result.id)){p.coins+=Math.floor(cost*.3);App.toast("Duplicate "+result.name+" — partial refund")}else{p[result.field].push(result.id);App.toast("You won "+result.name+"!")}await App.save();shop();
+  const ci=+btn.dataset.ci,tier=+btn.dataset.tier,cost=bagPrices[ci]*(tier+1);
+  if(p.coins<cost){App.toast("Not enough coins");return}
+  const items=categories[ci][1],pool=items.map(x=>({x,w:Math.max(1,100/Math.pow(3,Math.abs((x.rar||0)-tier)))}));
+  let roll=Math.random()*pool.reduce((n,y)=>n+y.w,0),result=pool[0].x;
+  for(const y of pool){roll-=y.w;if(roll<=0){result=y.x;break}}
+  p.coins-=cost;p[result.field]=p[result.field]||[];
+  if(p[result.field].includes(result.id)){p.coins+=Math.floor(cost*.3);App.toast("Duplicate "+result.name+" — partial refund")}
+  else{p[result.field].push(result.id);App.toast("You won "+result.name+"!")}
+  await App.save();shop();
  });
 }
 function aiSetup(){

@@ -28,7 +28,7 @@ function makeFighter(o){
  const look=window.Rig.lookFor(o.charId,o.col,o.skinId||0);const rig=window.Rig.build(look,o.glow);rig.g.traverse(m=>{if(m.isMesh)m.castShadow=!m.userData.ol&&(!low||m.parent===rig.torso||m.parent===rig.hips||m.parent===rig.head)});scene.add(rig.g);
  const f=Object.assign({rig,look,x:0,y:0,z:0,vx:0,vy:0,vz:0,r:0,st:"free",stT:0,cd:[0,0,0,0],m1i:-1,m1T:0,m1CD:0,dashT:0,dashCD:0,dashDir:"F",blk:false,blkT:9,guard:100,awk:0,awT:0,fin:false,evT:0,inv:0,carry:null,pend:[],lock:0,root:null,buff:{},sh:0,ph:0,anState:"idle",fl:0,mv:false,air:false,dead:false,rt:0,hist:[],histT:0},o);
  f.kitDef=KITS[f.kit%KITS.length];
- if(f.isMe&&window.PC_EXTRA_MOVES){const slots=(pf.moveSlots||{})[f.kit]||[0,1,2,3],pool=[...f.kitDef.moves,...PC_EXTRA_MOVES];f.kitDef=Object.assign({},f.kitDef,{moves:slots.map((id,i)=>pool[id]&&((pool[id].unlockXP||0)<=pf.xp||pf.role==="mega")?pool[id]:pool[i])})}
+ if(f.isMe&&window.PC_EXTRA_MOVES){const slots=(pf.moveSlots||{})[f.kit]||[0,1,2,3],pool=[...f.kitDef.moves,...PC_EXTRA_MOVES];f.kitDef=Object.assign({},f.kitDef,{moves:slots.map((id,i)=>pool[id]&&((pool[id].unlockXP||0)<=pf.xp||pf.role==="mega"||(pf.boughtMoves||[]).includes(id-f.kitDef.moves.length))?pool[id]:pool[i])})}
  nameTag(f);
  const ice=new THREE.Mesh(new THREE.BoxGeometry(2.4,5.4,2.4),new THREE.MeshStandardMaterial({color:0xaee9ff,transparent:true,opacity:.55,roughness:.1}));ice.position.y=2.7;ice.visible=false;rig.g.add(ice);f.ice=ice;
  return f}

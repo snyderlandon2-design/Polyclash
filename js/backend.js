@@ -5,7 +5,7 @@ const cloud=!!(window.supabase&&/^https?:/.test(C.SUPABASE_URL||"")&&C.SUPABASE_
 const sb=cloud?window.supabase.createClient(C.SUPABASE_URL,C.SUPABASE_ANON_KEY):null;
 const get=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
 const set=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-const blank=(u,g)=>({username:u,guest:!!g,coins:500,wins:0,kills:0,xp:0,chars:[D.START],weapons:[0],char:D.START,weapon:0,skins:[0],skin:0,lv:{},moveSlots:{},role:"player",powers:{},on:{}});
+const blank=(u,g)=>({username:u,guest:!!g,coins:500,wins:0,kills:0,xp:0,chars:[D.START],weapons:[0],char:D.START,weapon:0,skins:[0],skin:0,lv:{},moveSlots:{},boughtMoves:[],emotes:[],role:"player",powers:{},on:{}});
 const fix=p=>Object.assign(blank(p.username),p);
 // exclusive items/titles/powers come from the secure grants table, never from the player's own save
 function applyGrants(p){const g=p.grants||[];p.xChars=g.filter(x=>x.kind==="char").map(x=>+x.item);p.xWeapons=g.filter(x=>x.kind==="weapon").map(x=>+x.item);
@@ -56,7 +56,7 @@ async signOut(){if(cloud)await sb.auth.signOut();try{localStorage.removeItem("pc
 guest(){return Object.assign(fix(get("pc_guest")||blank("Guest"+Math.floor(1000+Math.random()*9000))),{guest:true,role:"player",powers:{}})},
 async save(p){
  if(p.guest){set("pc_guest",p);return}
- if(cloud){await sb.from("profiles").update({coins:p.coins,wins:p.wins,kills:p.kills,xp:p.xp,data:{chars:p.chars,weapons:p.weapons,char:p.char,weapon:p.weapon,skins:p.skins,skin:p.skin,lv:p.lv,moveSlots:p.moveSlots||{},on:p.on}}).eq("id",p.id);return}
+ if(cloud){await sb.from("profiles").update({coins:p.coins,wins:p.wins,kills:p.kills,xp:p.xp,data:{chars:p.chars,weapons:p.weapons,char:p.char,weapon:p.weapon,skins:p.skins,skin:p.skin,lv:p.lv,moveSlots:p.moveSlots||{},boughtMoves:p.boughtMoves||[],emotes:p.emotes||[],on:p.on}}).eq("id",p.id);return}
  const a=get("pc_acc")||{},k=p.username.toLowerCase();if(a[k]){a[k].p=p;set("pc_acc",a)}},
 async board(cat){let rows;
  if(cloud){const {data}=await sb.from("profiles").select("id,username,coins,wins,kills,xp,data").order(cat==="coins"?"coins":cat==="kills"?"kills":"wins",{ascending:false}).limit(100);rows=(data||[]).map(r=>({id:r.id,username:r.username,coins:r.coins,wins:r.wins,kills:r.kills,xp:r.xp,n:((r.data&&r.data.chars)||[]).length}))}

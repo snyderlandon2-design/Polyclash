@@ -148,6 +148,48 @@ function buildR6(look,glow){
  case 11:box(head,1.12,.22,1.12,accent,0,.5,0);strip(-.4,.9,.16,1.1,detail);strip(.4,.9,.16,1.1,detail);break;
  case 19:box(torso,1.3,.75,.08,bright,0,.92,.54,.55);box(head,1.12,.16,1.14,accent,0,.52,0);break;
  }
+ // Superhero-grade costume layers anchored to individual R6 limbs so punches and kicks stay articulated.
+ const armor=(parent,w,h,d,c,x,y,z)=>box(parent,w,h,d,c,x,y,z,.18);
+ const sole=shade(look.shoe,.54),cloth=shade(shirt,.8),metal=shade(accent,1.12);
+ for(const [side,part,lp] of [[-1,L,LL],[1,R,RL]]){
+  // Distinct boots with cuffs, reinforced toes, raised heels and side seams.
+  armor(lp.hp,.91,.37,.96,look.shoe,0,-1.27,.025);
+  armor(lp.hp,.92,.12,1.04,sole,0,-1.48,.09);
+  armor(lp.hp,.93,.16,.99,metal,0,-1.02,0);
+  box(lp.hp,.34,.11,.08,accent,side*.18,-1.33,.51);
+  // Gloves, cuffs and sleeve panels follow the shoulder joint.
+  armor(part.sp,.87,.35,.91,look.shoe,0,-1.46,0);
+  armor(part.sp,.9,.12,.94,metal,0,-1.25,0);
+  if(a%4===0||a%4===3){
+   armor(part.sp,.95,.45,.97,cloth,0,-.35,0);
+   armor(part.sp,.48,.13,1.02,metal,0,-.19,0);
+  }else{
+   armor(part.sp,.86,.12,.92,metal,0,-.48,0);
+  }
+  if(a%5===0||a%5===2){
+   const pa=new (T().Mesh)(new (T().CylinderGeometry)(.34,.47,.27,6),mat(metal,.32));
+   pa.rotation.z=Math.PI/2;pa.position.set(side*.2,-.22,0);part.sp.add(pa);
+  }
+  if(a%3===1)box(lp.hp,.1,.58,.1,metal,side*.39,-.82,.43);
+ }
+ // Separate shoulder insignia, chest badges, collar, waist harness and side utility gear.
+ armor(torso,1.52,.14,1.04,cloth,0,1.52,0);
+ armor(torso,.64,.17,.1,metal,0,1.28,.53);
+ armor(hips,1.9,.16,1.03,look.shoe,0,.2,0);
+ armor(hips,.46,.23,.14,metal,0,.22,.54);
+ if(a%4===0){for(const side of [-1,1])armor(torso,.22,1.17,.09,metal,side*.53,.79,.54)}
+ if(a%4===1){armor(torso,1.35,.47,.09,cloth,0,1.08,.54);armor(torso,.47,.45,.11,metal,0,1.06,.61)}
+ if(a%4===2){armor(torso,.22,1.45,.1,metal,-.35,.83,.55);armor(torso,.22,1.45,.1,metal,.35,.83,.55)}
+ if(a%4===3){armor(torso,1.56,.1,.1,metal,0,.65,.56);armor(torso,.11,.8,.1,metal,0,.95,.56)}
+ // Lightweight scarf or coat tails hang off torso and hips without interfering with leg swings.
+ if(a===2||a===7||a===12||a===17){armor(torso,1.17,.22,1.09,accent,0,1.56,0);armor(torso,.36,.85,.09,accent,-.46,.18,-.53)}
+ if(a===5||a===10||a===15||a===19){for(const side of [-1,1])armor(hips,.3,.83,.08,cloth,side*.72,-.43,-.49)}
+ // Different head silhouettes: swept hair, visor, band, circlet, goggles or crown.
+ if(a%5===0){armor(head,1.12,.22,1.1,look.hair,0,.53,0);armor(head,.56,.16,.27,look.hair,-.24,.38,.5)}
+ if(a%5===1){armor(head,1.15,.19,1.16,metal,0,.49,0);armor(head,1.08,.14,.12,look.shoe,0,.22,.54)}
+ if(a%5===2){armor(head,1.14,.13,1.12,accent,0,.39,0);armor(head,.33,.22,.08,metal,0,.41,.59)}
+ if(a%5===3){for(const side of [-1,1])armor(head,.32,.21,.09,metal,side*.3,.13,.55)}
+ if(a%5===4){armor(head,1.18,.2,1.12,look.hair,0,.51,0);armor(head,.19,.24,.22,accent,.41,.41,.39)}
  // Fabric seams, jacket edges and layered belt details remain shallow to avoid clipping animations.
  for(const side of [-1,1]){strip(side*.83,.82,.035,1.5,detail);box(hips,.42,.09,.07,detail,side*.54,.18,.49)}
  if(a%3===0){box(torso,.6,.18,.06,bright,0,.34,.55);box(torso,.35,.06,.06,detail,0,.48,.56)}

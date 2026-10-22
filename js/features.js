@@ -1,7 +1,7 @@
 /* Owner AI Developer and featured item shop. All purchases use the existing profile save path. */
 (()=>{"use strict";
 const $=id=>document.getElementById(id),D=()=>window.DATA,P=()=>window.App?.P?.(),esc=s=>String(s).replace(/[&<>"']/g,c=>"&#"+c.charCodeAt(0)+";");
-let aiMode="chat",history=[];
+let aiMode="add",history=[];
 const day=86400000;
 const cycle=()=>Math.floor(Date.now()/day);
 const remaining=()=>{let n=(cycle()+1)*day-Date.now();return [Math.floor(n/3600000),Math.floor(n%3600000/60000),Math.floor(n%60000/1000)].map(x=>String(x).padStart(2,"0")).join(":")};
@@ -55,7 +55,7 @@ function aiSetup(){
   return "I only handle specific game commands. Try: Give Landon2 500 coins, or: Replace [item] with [item] in the shop. I will not answer unrelated questions or make random changes.";
  };
  const paint=()=>{$("aiHistory").innerHTML=history.map(m=>'<p><b>'+ (m.role==="user"?"YOU":"AI")+'</b>: '+esc(m.content)+'</p>').join("");$("aiHistory").scrollTop=$("aiHistory").scrollHeight};
- for(const [id,mode] of [["aiModeChat","chat"],["aiModeAdd","add"]])$(id).onclick=()=>{aiMode=mode;App.toast(mode==="add"?"Feature proposal mode — approval required":"AI chat mode")};
+ for(const [id,mode] of [["aiModeChat","chat"],["aiModeAdd","add"]])$(id).onclick=()=>{aiMode="add";App.toast("Owner command mode only — no general questions")};
  send.onclick=async()=>{
   if(!aiOwner()){App.toast("Owner access required");return}
   const input=$("aiPrompt"),message=input.value.trim();if(!message)return;

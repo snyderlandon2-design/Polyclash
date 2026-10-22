@@ -237,7 +237,8 @@ function physics(f,dt){
  const roof=World.roofHeight(f.x,f.z);
  if(roof>0&&f.vy<=0&&oldY>=roof-.12&&f.y<=roof){f.y=roof;f.vy=0;f.floorY=roof;f.wj=0;}
  else if(!roof||f.y<roof-.2||f.y>roof+.15)f.floorY=0;
- // R6 arms extend almost two units from the center: reserve their width near solid walls.\n const hit=World.resolve(f,1.92);
+ // R6 arms extend almost two units from the center: reserve their width near solid walls.
+ const hit=World.resolve(f,1.92);
  // Safety net: chained knockback, air teleports and wall collisions must never
  // leave the fighter below the arena floor or with non-finite coordinates.
  if(!Number.isFinite(f.y)||f.y<0){f.y=0;f.vy=Math.max(0,Number.isFinite(f.vy)?f.vy:0);f.hang=0;}
@@ -413,13 +414,13 @@ function start(o){
  buildMoves();combo={n:0,t:0};tgt=null;
  $("train").classList.toggle("hide",!canTrain());$("gAdmin").classList.toggle("hide",!(window.App.staff&&App.staff()));
  try{history.pushState({arena:1},"")}catch(e){}
- yaw=Math.PI*.25;pitch=.32;spT=1;bt=0;time=0;t0=performance.now();on=true;raf=requestAnimationFrame(loop)}
+ yaw=Math.PI*.25;pitch=.32;camT=null;spT=1;bt=0;time=0;t0=performance.now();on=true;raf=requestAnimationFrame(loop)}
 function stop(){adminFly=false;adminObserve=false;shiftLock=false;on=false;cancelAnimationFrame(raf);if(ch){ch.close();ch=null}if(document.pointerLockElement)document.exitPointerLock();
  if(FX&&FX.clear)FX.clear();bots.forEach(removeFighter);bots.length=0;rem.forEach(removeFighter);rem.clear();proj.length=0;hazards.length=0;walls.length=0;
  if(ren){ren.dispose();ren.domElement.remove();ren=null}scene=null;me=null;$("gameUI").classList.add("hide");document.body.classList.remove("ingame");$("adminScreen").classList.remove("overlay");keys={};md=0;joy.x=joy.z=0;jumpHeld=false}
 function loop(ts){
  if(!on)return;raf=requestAnimationFrame(loop);
- const rdt=Math.min(.05,(ts-t0)/1000||.016);t0=ts;frame(rdt,true)}
+ const rdt=Math.min(.05,(ts-t0)/1000||.016);t0=ts;try{frame(rdt,true)}catch(err){console.error("Poly-Clash arena frame failed:",err);on=false;cancelAnimationFrame(raf);const el=document.getElementById("arena");if(el)el.textContent="GAME ERROR — "+(err?.message||"unknown error")+" · PRESS HOME";const home=document.getElementById("gHome");if(home)home.classList.remove("hide")}}
 function frame(rdt,draw){
  const dt=rdt*FX.timeScale(rdt);time+=dt;
  // local player

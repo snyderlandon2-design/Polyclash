@@ -458,6 +458,10 @@ function frame(rdt,draw){
 // ---------- input ----------
 const isTyping=e=>e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA");
 addEventListener("keydown",e=>{if(!on||isTyping(e))return;if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Tab"].indexOf(e.code)>=0)e.preventDefault();if(e.repeat)return;const c=e.code;if(c==="MetaLeft"||c==="MetaRight"){shiftLock=!shiftLock;if(shiftLock){const canvas=ren?.domElement;if(canvas?.requestPointerLock)canvas.requestPointerLock().catch?.(()=>{});}else if(document.pointerLockElement)document.exitPointerLock();if(window.App&&App.toast)App.toast(shiftLock?"SHIFT LOCK ON":"SHIFT LOCK OFF");return}keys[e.code]=1;
+ if(c==="KeyP"&&App.staff?.()){App.openAdmin(true);return}
+ if(c==="KeyH"){App.go("menuScreen");return}
+ if(c==="KeyC"){document.getElementById("gChat")?.click();return}
+ if(c==="KeyB"){const owned=pf.emotes||[];if(owned.length){const poses=[{rax:-2.5,rao:.2},{lax:-2.7,rax:-2.7},{lax:-.8,rax:-.8,llx:.5,rlx:-.5},{tx:.7,lax:.3,rax:.3},{lax:-3,rax:-3,tx:-.2}];Rig.play(me,"emote",1.6,[[0,{}],[.25,poses[owned[0]%5]],[.6,poses[owned[0]%5]],[1,{}]]);feed("EMOTE")}else feed("BUY AN EMOTE IN ITEM SHOP");return}
  if(c==="Space"){jumpHeld=true;if(!adminFly&&!adminObserve)jump(me)}
  else if(c==="Digit1"||c==="Numpad1")useMove(me,0);else if(c==="Digit2"||c==="Numpad2")useMove(me,1);else if(c==="Digit3"||c==="Numpad3")useMove(me,2);else if(c==="Digit4"||c==="Numpad4")useMove(me,3);else if(c==="Digit5"||c==="Numpad5")ultimate();else if(c==="Digit6"||c==="Numpad6")weaponMove(me);
  else if(c==="KeyQ")dash(me,me.inDir?me.inDir[0]:0,me.inDir?me.inDir[1]:0);else if(c==="KeyG")awaken(me);else if(c==="KeyR")finisher(me);

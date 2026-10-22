@@ -141,7 +141,7 @@ function weaponMove(f){
  const w=DT.WP[(f.isMe?pf.weapon:0)]||DT.WP[0],type=w.id%10,col=w.col;
  f.weaponCD=Math.max(4,9/(f.S.agi||1));f.inv=Math.max(f.inv,.25);
  if(type===8||type===9){ // Staff and whip: vertical mobility to reach rooftops.
-  f.vy=58;f.hang=0;f.vx*=.5;f.vz*=.5;Rig.play(f,"uppercut",.5);
+  f.vy=76;f.hang=0;f.vx*=.5;f.vz*=.5;Rig.play(f,"uppercut",.5);
   FX.pillar(f.x,f.z,col,13,2,.55);FX.ring(f.x,f.y+2,f.z,col,7,.5);
   if(f.isMe)feed("SKY VAULT");
  }else if(type===4||type===7){ // Dagger and gauntlets: quick flurry.
@@ -376,7 +376,7 @@ function hud(){
  if(tgt&&tgtT>0&&!tgt.dead){$("tgt").classList.remove("hide");$("tgtN").textContent=tgt.name;$("tgtB").style.width=clamp(tgt.hp/tgt.mhp*100,0,100)+"%"}else $("tgt").classList.add("hide");
  $("extP").classList.toggle("on",me.extT>0);if(me.extT>0)$("extF").style.width=(me.extT/.62*100)+"%";
  $("airP").classList.toggle("on",!!me.airC);if(me.airC)$("airP").textContent="AIR "+me.airC.hits+"/3"+(me.airC.hits>=3?" · CLICK TO SLAM":"");
- const ia=insaneActive();$("insB").classList.toggle("hide",!(window.App.insane&&App.insane()));$("insB").textContent=ia?"SUPER INSANE":"INSANE · OFF IN PUBLIC";$("insB").classList.toggle("off",!ia);
+ const ia=insaneActive();$("insB").classList.toggle("hide",!(window.App.insane&&App.insane()));$("insB").textContent=ia?"SUPER INSANE" :"INSANE · OFF";$("insB").classList.toggle("off",!ia);
  if(ia&&mvU)mvU.lastChild.textContent=ultCD>0?ultCD.toFixed(1):"";
  if(canTrain()){$("tLvl").textContent="Lv "+training.lvl;$("tAuto").textContent="AUTO: "+(training.auto?"ON":"OFF");$("tAuto").classList.toggle("act",training.auto);$("tCount").textContent=bots.filter(alive).length+" bots"}
  const near=!me.carry&&World.nearestProp(me.x,me.z,3.2,true);$("grabHint").classList.toggle("hide",!near&&!me.carry);$("grabHint").textContent=me.carry?"[E] / click THROW":"[E] PICK UP";

@@ -134,6 +134,23 @@ function buildR6(look,glow){
  if(theme===4||theme===6){box(torso,2.25,.3,1.18,accent,0,1.56,0,.45);box(head,1.18,.23,1.17,accent,0,.54,0,.45)}
  if(theme===5||theme===7){box(torso,1.5,.11,.09,accent,0,1.25,.53,.4);box(head,.19,.18,1.2,accent,0,.45,0,.5)}
  if(theme===8){box(torso,2.13,.18,1.1,accent,0,.16,0);box(head,1.2,.16,1.2,look.hair,0,.52,0)}
+ // Archetype-specific clothing and readable silhouettes: twenty designs rather than five recolors.
+ const a=look.arch,detail=shade(shirt,.67),bright=shade(accent,1.25);
+ const strip=(x,y,w,h,color)=>box(torso,w,h,.055,color,x,y,.525);
+ switch(a){
+ case 0:case 3:case 13:strip(0,.65,1.5,.12,detail);strip(0,1.2,.6,.12,accent);break;
+ case 1:case 9:case 14:strip(-.28,.82,.16,1.55,bright);strip(.28,.82,.16,1.55,bright);box(hips,1.92,.16,1.04,accent,0,.16,0);break;
+ case 2:case 12:case 16:box(head,1.18,.18,1.16,look.hair,0,.53,0);box(head,1.08,.09,.27,accent,0,.35,.56);strip(0,.65,.16,1.2,detail);break;
+ case 4:case 6:case 18:box(head,1.22,.22,1.22,detail,0,.54,0);box(torso,2.13,.18,1.07,detail,0,1.53,0);strip(0,.82,1.4,.16,bright);break;
+ case 5:case 10:case 17:box(torso,2.25,.3,1.13,accent,0,1.5,0,.55);box(torso,1.24,.78,.08,detail,0,.8,.55,.35);strip(0,.85,.16,.7,bright);break;
+ case 7:case 15:box(torso,2.15,.36,1.13,detail,0,1.5,0);box(head,1.13,.18,1.15,accent,0,.52,0);break;
+ case 8:box(head,1.16,.22,1.16,detail,0,.52,0);box(head,1.19,.09,.55,accent,0,.38,.65);strip(0,.85,.7,.15,bright);break;
+ case 11:box(head,1.12,.22,1.12,accent,0,.5,0);strip(-.4,.9,.16,1.1,detail);strip(.4,.9,.16,1.1,detail);break;
+ case 19:box(torso,1.3,.75,.08,bright,0,.92,.54,.55);box(head,1.12,.16,1.14,accent,0,.52,0);break;
+ }
+ // Fabric seams, jacket edges and layered belt details remain shallow to avoid clipping animations.
+ for(const side of [-1,1]){strip(side*.83,.82,.035,1.5,detail);box(hips,.42,.09,.07,detail,side*.54,.18,.49)}
+ if(a%3===0){box(torso,.6,.18,.06,bright,0,.34,.55);box(torso,.35,.06,.06,detail,0,.48,.56)}
  const fg=side=>{const m=new (T().Mesh)(new (T().BoxGeometry)(.86,.85,.9),new (T().MeshStandardMaterial)({color:glow||0xffffff,emissive:glow||0xffffff,emissiveIntensity:.8,transparent:true,opacity:.75}));m.position.y=-.85;m.visible=false;side.el.add(m);return m};
  return{g,root,hips,torso,neck,head,L,R,LL,RL,glow:[fg(L),fg(R)],cur:{},look,chest,face:null,sway:[],ex:0};
 }
@@ -295,7 +312,8 @@ const GUARD=[
  {lax:.1,lao:.35,lab:.3,rax:.1,rao:.35,rab:.3,tx:-.05,hx:.15,llb:.1,rlb:.1}// phantom (loose, arms out)
 ];
 function loco(f,time){
- const st=f.look?f.look.style:0,G=GUARD[st],p=f.ph||0,s=Math.sin(p),c=Math.cos(p);
+ const st=f.look?f.look.style:0,arch=f.look?f.look.arch:0,G=GUARD[st],p=f.ph||0,s=Math.sin(p),c=Math.cos(p);
+ if(f.anState==="stun"){const w=Math.sin(time*25+arch)*.12;return{tx:-.32,hx:-.38+w,hy:w*.8,lax:.25+w,lao:.35,rax:.15-w,rao:.35,lab:.5,rab:.4,llb:.4,rlb:.3,y:-.13,rz:w*.9,ty:w*.7}};
  if(f.anState==="ragdoll")return{rx:-1.35+(f.spin||0),lax:-2.6,lao:.6,rax:-2.6,rao:.6,llx:-.4,llo:.3,rlx:.2,rlo:.3,hx:-.4,y:-1.3};
  if(f.anState==="down")return{rx:-1.5,lax:-2.8,lao:.3,rax:-2.8,rao:.3,llo:.15,rlo:.15,y:-1.7};
  if(f.anState==="stun"){const w=Math.sin(time*18)*.06;return{tx:-.35,hx:-.45+w,lax:.2,lao:.35,rax:.25,rao:.35,lab:.3,rab:.3,llb:.35,rlb:.2,y:-.15,rz:w}}
@@ -380,7 +398,7 @@ function update(f,dt,time){
   for(const c of R.sway)c.segs.forEach((s,i)=>{s.rotation.x=(i?.06:c.ang)+sp*(i?.012:.035)+up*(i?.2:.6)+Math.sin(time*3.2+i*.9+(f.x||0)*.1)*(.04+sp*.003)})}
  let pose=loco(f,time);
  if(f.act){f.act.t+=dt/f.act.dur;if(f.act.t>=1&&!f.act.hold)f.act=null;else pose=mix(pose,sample(f.act.keys,Math.min(1,f.act.t)),Math.min(1,f.act.t*8+.4))}
- const c=f.rig.cur,k=1-Math.exp(-dt*(f.act?30:16));
+ const c=f.rig.cur,k=1-Math.exp(-dt*(f.act?34:19));
  for(const key of KEYS){const v=pose[key]||0;c[key]=c[key]===undefined?v:c[key]+(v-c[key])*k}
  // big rotations (ry spins, flips) must not lag
  if(f.act){const raw=sample(f.act.keys,Math.min(1,f.act.t));c.ry=raw.ry||0;c.rx=Math.abs(raw.rx||0)>2?raw.rx:c.rx}

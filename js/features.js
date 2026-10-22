@@ -7,10 +7,10 @@ function shop(){
  const p=P();if(!p)return;
  const bagPrices=[1800,600,900,1100,400];
  const categories=[
-  ["Characters",D().CH.filter(x=>!x.ex).slice(0,5).map(x=>({id:x.id,name:x.name,rar:x.rar,price:2400+(x.rar||0)*900,field:"chars"}))],
+  ["Characters",[0,1,2,3,5].map(r=>D().CH.find(x=>!x.ex&&x.rar===r)).filter(Boolean).map(x=>({id:x.id,name:x.name,rar:x.rar,price:2400+(x.rar||0)*900,field:"chars"}))],
   ["Skins",D().SKINS.slice(1,6).map((x,i)=>({id:i+1,name:x[0],rar:i===4?5:i,price:500+i*180,field:"skins"}))],
   ["Moves",(window.PC_EXTRA_MOVES||[]).slice(0,5).map((x,i)=>({id:i,name:x.n,rar:i===4?5:i,price:900+i*250,field:"boughtMoves"}))],
-  ["Weapons",D().WP.filter(x=>!x.ex).slice(0,5).map(x=>({id:x.id,name:x.name,rar:x.rar,price:1200+(x.rar||0)*350,field:"weapons"}))],
+  ["Weapons",[0,1,2,3,5].map(r=>D().WP.find(x=>!x.ex&&x.rar===r)).filter(Boolean).map(x=>({id:x.id,name:x.name,rar:x.rar,price:1200+(x.rar||0)*350,field:"weapons"}))],
   ["Emotes",["Wave","Cheer","Dance","Bow","Victory Pose"].map((name,i)=>({id:i,name,rar:i===4?5:i,price:250+i*125,field:"emotes"}))]
  ];
  const target=$("featuredShop");if(!target)return;

@@ -62,9 +62,26 @@ async function board(cat){
  $("boardTabs").innerHTML=[["wins","Wins"],["kills","Bot Kills"],["coins","Coins"],["collection","Collection"],["level","Level"]].map(c=>'<button class="btn" data-c="'+c[0]+'">'+c[1]+'</button>').join("");
  document.querySelectorAll("#boardTabs .btn").forEach(b=>b.onclick=()=>board(b.dataset.c));
  $("boardList").textContent="Loading...";const rows=await B.board(cat);let online=new Set();try{online=await B.onlineIds()}catch(e){}
- $("boardList").innerHTML=rows.length?rows.map((r,i)=>"<div>#"+(i+1)+" <b>"+esc(r.username)+"</b> "+(online.has(r.id)?'<span class="onlineDot" title="Online"></span> <small class="onlineText">ONLINE</small>':"")+" - "+r.val+"</div>").join(""):"<div>No players yet</div>";
+ $("boardList").innerHTML=rows.length?rows.map((r,i)=>"<div>#"+(i+1)+" <b>"+esc(r.username)+"</b> "+(online.has(r.id)?'<span class="onlineDot" title="Online"></span> <small class="onlineText">ONLINE</small>':"")+" - "+r.val+(online.has(r.id)&&P&&!P.guest&&r.username!==P.username?' <button class="btn sm duelChallenge" data-duel="'+esc(r.id)+'" data-name="'+esc(r.username)+'">CHALLENGE 1v1</button>':"")+"</div>").join(""):"<div>No players yet</div>";
+ $("boardList").querySelectorAll(".duelChallenge").forEach(b=>b.onclick=()=>challenge(b.dataset.duel,b.dataset.name));
 }
-let admOverlay=false,insp=null;
+async function challenge(id,name){
+ if(!confirm("Challenge "+name+" to a first-to-five KOs duel?"))return;
+ try{const d=await B.challengePlayer(id);toast("Challenge sent to "+name);if(duelWatch)clearInterval(duelWatch);
+ let checks=0;duelWatch=setInterval(async()=>{try{checks++;const r=await B.duelCheck(d.id);if(r?.status==="accepted"){clearInterval(duelWatch);duelWatch=null;Game.start({mode:"duel",room:r.room})}else if(r?.status==="declined"||checks>30){clearInterval(duelWatch);duelWatch=null;toast(r?.status==="declined"?"Challenge declined":"Challenge expired")}}catch(e){clearInterval(duelWatch);duelWatch=null}},2000);
+ }catch(e){toast(e.message||"Could not challenge player")}
+}
+async function duelInbox(){
+ if(!P||P.guest||!B.cloud)return;
+ try{const invites=await B.duelInbox();const el=$("duelInbox");if(!el)return;
+ el.innerHTML=invites.map(d=>'<div class="row"><span>1v1 challenge received</span><button class="btn gold" data-yes="'+esc(d.id)+'">ACCEPT</button><button class="btn red" data-no="'+esc(d.id)+'">DECLINE</button></div>').join("");
+ el.querySelectorAll("[data-yes]").forEach(b=>b.onclick=async()=>{try{const d=await B.duelReply(b.dataset.yes,"accepted");Game.start({mode:"duel",room:d.room})}catch(e){toast(e.message)}});
+ el.querySelectorAll("[data-no]").forEach(b=>b.onclick=async()=>{try{await B.duelReply(b.dataset.no,"declined");duelInbox()}catch(e){toast(e.message)}});
+ }catch(e){}
+}
+setInterval(()=>{if(P&&$("menuScreen").classList.contains("on"))duelInbox()},4000);
+
+let admOverlay=false,insp=null,duelWatch=null;
 function openAdmin(over){admOverlay=!!over;const sc=$("adminScreen");if(over){sc.classList.add("on","overlay")}else{sc.classList.remove("overlay");go("adminScreen");return}admin()}
 function closeAdmin(){const sc=$("adminScreen");if(admOverlay){sc.classList.remove("on","overlay");admOverlay=false}else go("menuScreen")}
 function admTab(t){document.querySelectorAll(".admTabs button").forEach(b=>b.classList.toggle("on",b.dataset.at===t));document.querySelectorAll(".atab").forEach(x=>x.classList.toggle("on",x.id==="at_"+t));if(t==="log")loadLog();if(t==="pl"&&!$("plist").innerHTML)megaList()}

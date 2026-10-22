@@ -61,8 +61,8 @@ function guide(){const st=(window.Rig&&Rig.STYLE_NAMES)||[];$("guideList").inner
 async function board(cat){
  $("boardTabs").innerHTML=[["wins","Wins"],["kills","Bot Kills"],["coins","Coins"],["collection","Collection"],["level","Level"]].map(c=>'<button class="btn" data-c="'+c[0]+'">'+c[1]+'</button>').join("");
  document.querySelectorAll("#boardTabs .btn").forEach(b=>b.onclick=()=>board(b.dataset.c));
- $("boardList").textContent="Loading...";const rows=await B.board(cat);
- $("boardList").innerHTML=rows.length?rows.map((r,i)=>"<div>#"+(i+1)+" <b>"+esc(r.username)+"</b> - "+r.val+"</div>").join(""):"<div>No players yet</div>";
+ $("boardList").textContent="Loading...";const rows=await B.board(cat);let online=new Set();try{online=await B.onlineIds()}catch(e){}
+ $("boardList").innerHTML=rows.length?rows.map((r,i)=>"<div>#"+(i+1)+" <b>"+esc(r.username)+"</b> "+(online.has(r.id)?'<span class="onlineDot" title="Online"></span> <small class="onlineText">ONLINE</small>':"")+" - "+r.val+"</div>").join(""):"<div>No players yet</div>";
 }
 let admOverlay=false,insp=null;
 function openAdmin(over){admOverlay=!!over;const sc=$("adminScreen");if(over){sc.classList.add("on","overlay")}else{sc.classList.remove("overlay");go("adminScreen");return}admin()}
@@ -79,6 +79,7 @@ function admin(){
 }
 async function megaList(){
  $("plist").innerHTML='<div class="mu">Loading...</div>';let l=[];try{l=await B.aFind($("psearch").value.trim())}catch(e){$("plist").innerHTML='<div class="mu">'+esc(e.message)+'</div>';return}
+ let online=new Set();try{online=await B.onlineIds()}catch(e){}
  $("plist").innerHTML=l.map(p=>'<div class="pl" data-id="'+esc(p.id)+'"><b>'+esc(p.username)+'</b>'+(p.role!=="player"?' <i class="tagx">'+(p.role==="owner"?"MEGA":"ADMIN")+'</i>':'')+(p.banned?' <i class="tagx ban">BANNED</i>':'')+'<span>'+p.coins+' coins</span></div>').join("")||'<div class="mu">No players found</div>';
  document.querySelectorAll(".pl").forEach(e=>e.onclick=()=>inspect(e.dataset.id));
 }
@@ -92,7 +93,9 @@ async function inspect(id){
  const mega=P.role==="mega",can=k=>mega||(P.powers&&P.powers[k]),isOwner=d.role==="owner",self=d.username===P.username,dd=d.data||{};
  const lvl=1+Math.floor(Math.sqrt((d.xp||0)/100));
  const chars=(dd.chars||[]).length,weps=(dd.weapons||[]).length,skins=(dd.skins||[]).length;
+ let online=new Set();try{online=await B.onlineIds()}catch(e){}
  let h='<div class="insp"><div class="ihead"><b>'+esc(d.username)+'</b> <i class="tagx">'+(isOwner?"MEGA ADMIN":d.role.toUpperCase())+'</i>'+(d.ban?' <i class="tagx ban">'+(d.ban.until?"TIMED OUT":"BANNED")+'</i>':'')+'</div>';
+ h+='<p class="mu">Live screen viewing is not enabled. Moderation uses game activity and account information, not hidden device capture.</p>';
  h+='<div class="istats"><span>'+d.coins+' coins</span><span>Lv '+lvl+'</span><span>'+d.wins+' wins</span><span>'+d.kills+' bot KOs</span><span>'+chars+' fighters</span><span>'+weps+' weapons</span><span>'+skins+' skins</span></div>';
  if(d.ban)h+='<div class="warn">'+(d.ban.until?"Timed out until "+new Date(d.ban.until).toLocaleString():"Permanently banned")+(d.ban.reason?" - "+esc(d.ban.reason):"")+'</div>';
  if(isOwner&&!self)h+='<div class="mu">The Mega Admin account cannot be changed.</div>';

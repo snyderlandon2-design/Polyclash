@@ -170,6 +170,7 @@ function act(a){if(a==="deleteAccount"){if(P.role!=="mega"||insp.role==="owner")
  if(a==="pw"){const pw={};document.querySelectorAll("#insp .pwl input").forEach(i=>{if(i.checked)pw[i.dataset.k]=true});return run(null,async()=>{await B.ownerSetAdmin(d.id,true,pw)},"Powers saved")}
 }
 async function loadLog(){$("logList").innerHTML='<div class="mu">Loading...</div>';let l=[];try{l=await B.aLog()}catch(e){}
+ const filter=($("logFilter")?.value||"").trim().toLowerCase();if(filter)l=l.filter(e=>(String(e.admin_name||"")+" "+String(e.target_name||"")+" "+String(e.action||"")).toLowerCase().includes(filter));
  $("logList").innerHTML=l.map(e=>'<div class="logi"><small>'+new Date(e.at).toLocaleString()+'</small> <b>'+esc(e.admin_name||"?")+'</b> '+esc(e.action)+' <b>'+esc(e.target_name||"")+'</b>'+(e.detail&&Object.keys(e.detail).length?' <small>'+esc(JSON.stringify(e.detail))+'</small>':'')+'</div>').join("")||'<div class="mu">No actions yet</div>'}
 document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go));
 $("inBtn").onclick=()=>login(B.signIn);$("upBtn2").onclick=()=>login(B.signUp);
@@ -186,7 +187,7 @@ $("tabC").onclick=()=>{tab="c";locker()};$("tabW").onclick=()=>{tab="w";locker()
 $("upBtn").onclick=()=>{const L=P.lv[P.char]||1,c=150*L;if(P.coins<c){toast("Not enough coins");return}P.coins-=c;P.lv[P.char]=L+1;hdr();save();locker()};
 $("selfCoinBtn").onclick=()=>{P.coins+=Number($("selfAmt").value)||0;hdr();save();toast("Coins added")};
 $("selfUnlock").onclick=()=>{P.chars=DT.CH.filter(c=>!c.ex||P.role==="mega").map(c=>c.id);P.weapons=DT.WP.filter(w=>!w.ex||P.role==="mega").map(w=>w.id);P.skins=DT.SKINS.map((x,i)=>i);hdr();save();toast("Everything unlocked")};
-$("plRef").onclick=megaList;$("psearch").onkeydown=e=>{if(e.key==="Enter")megaList()};$("admClose").onclick=closeAdmin;$("logRef").onclick=loadLog;document.querySelectorAll(".admTabs button").forEach(b=>b.onclick=()=>admTab(b.dataset.at));
+$("plRef").onclick=megaList;$("psearch").onkeydown=e=>{if(e.key==="Enter")megaList()};$("admClose").onclick=closeAdmin;$("logRef").onclick=loadLog;$("logFilter").oninput=()=>{clearTimeout(window.__logFilterTimer);window.__logFilterTimer=setTimeout(loadLog,250)};document.querySelectorAll(".admTabs button").forEach(b=>b.onclick=()=>admTab(b.dataset.at));
 $("insaneTg").onclick=()=>{P.on=P.on||{};P.on.insane=!P.on.insane;save();admin();toast(P.on.insane?"SUPER INSANE MODE ON":"Super Insane Mode off");if(window.Game&&Game.active&&Game.refresh)Game.refresh()};
 $("testBotBtn").onclick=async()=>{try{const result=await B.testBot();toast("Test bot: login "+result.loginTest+", profile "+result.profileTest);megaList()}catch(e){toast(e.message||"Test failed")}};
 $("cfgSave").onclick=async()=>{const v={announce:$("cfgNews").value.trim(),coinMult:Math.max(0,Number($("cfgCoin").value)||1),bagMult:Math.max(0,Number($("cfgBag").value)||1),botHp:Math.max(.1,Number($("cfgBot").value)||1)};const ok=await B.setConfig(v);if(ok){CFG=v;$("news").textContent=v.announce}toast(ok?"Live settings saved - players get them on next load":"Save failed")};

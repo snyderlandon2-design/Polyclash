@@ -19,7 +19,7 @@ function hdr(){if(!P)return;$("who").textContent=P.username+(P.role!=="player"?"
  $("adminBtn").classList.toggle("hide",!staff())}
 function reward(r){P.coins+=Math.round((r.coins||0)*CFG.coinMult);P.xp+=r.xp||0;P.kills+=r.kills||0;P.wins+=r.wins||0;hdr();clearTimeout(svT);svT=setTimeout(save,800)}
 function go(id){if(id!=="homeScreen"&&id!=="menuScreen"){try{history.pushState({s:id},"")}catch(e){}}if(window.Game&&Game.active){Game.stop();if(P)save()}if(!P&&id!=="homeScreen")id="homeScreen";document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));$(id).classList.add("on");
- if(P)hdr();if(id==="menuScreen"&&P&&window.Thumbs)setTimeout(()=>Thumbs.hero($("heroCv"),P),30);if(id==="lockerScreen")locker();if(id==="shopScreen")shop();if(id==="boardScreen")board("wins");if(id==="adminScreen"){$("adminScreen").classList.remove("overlay");admOverlay=false;admin()}if(id==="guideScreen")guide()}
+ if(P)hdr();if(id==="menuScreen"&&P&&window.Thumbs)setTimeout(()=>Thumbs.hero($("heroCv"),P),30);if(id==="lockerScreen")locker();if(id==="shopScreen")shop();if(id==="boardScreen")board("wins");if(id==="adminScreen"){setTimeout(recoveryPanel,50);$("adminScreen").classList.remove("overlay");admOverlay=false;admin()}if(id==="guideScreen")guide()}
 let busy=false;
 async function login(fn){if(busy)return;busy=true;const u=$("uIn").value.trim(),p=$("pIn").value;$("authMsg").textContent="Please wait...";let r;try{r=await fn.call(B,u,p)}catch(e){r={error:"Connection problem - try again"}}finally{busy=false}if(r.error){$("authMsg").textContent=r.error;return}P=r.p;mega();$("authMsg").textContent="";go("menuScreen")}
 function roll(bag){const w=bag.w,t=w.reduce((a,b)=>a+b,0);let r=Math.random()*t,ri=0;for(;ri<w.length-1;ri++){r-=w[ri];if(r<=0)break}
@@ -124,7 +124,9 @@ async function inspect(id){
   if(can("mod")&&!self){h+='<h4>MODERATION</h4><div class="row"><input id="bWhy" placeholder="Reason" maxlength="80">'+durSel("bDur").replace('<option value="0">Permanent</option>','').replace('</select>','<option value="0">Permanent ban</option></select>')+'</div><div class="row"><button class="btn red" data-a="ban">TIMEOUT / BAN</button>'+(d.ban?'<button class="btn gold" data-a="unban">UNBAN</button>':'')+'</div>'}
   if(mega&&!self){h+='<h4>ACCOUNT MANAGEMENT</h4><button class="btn red" data-a="deleteAccount">DELETE ACCOUNT & FREE USERNAME</button><h4>ADMIN ROLE</h4><div class="pwl">'+PWS.map(p=>'<label><input type="checkbox" data-k="'+p[0]+'"'+(d.powers&&d.powers[p[0]]?" checked":"")+'> '+p[1]+'</label>').join("")+'</div><div class="row"><button class="btn red" data-a="role">'+(d.role==="admin"?"REMOVE ADMIN":"MAKE ADMIN")+'</button>'+(d.role==="admin"?'<button class="btn" data-a="pw">SAVE POWERS</button>':'')+'</div>'}
  }
+ if(mega)h+='<h4>ACCOUNT RECOVERY</h4><button class="btn gold" id="makeRestorePoint">SAVE RESTORE POINT</button> <button class="btn" id="showRestoreHistory">VIEW HISTORY</button><div id="recoveryHistory" class="list"></div>';
  box.innerHTML=h+'</div>';
+ if(mega){$("makeRestorePoint").onclick=async()=>{try{await B.createRestorePoint(d.id);toast("Restore point saved");loadRecovery(d.id)}catch(e){toast(e.message)}};$("showRestoreHistory").onclick=()=>loadRecovery(d.id)}
  const fill=()=>{const k=$("iKind");if(!k)return;const src=k.value==="chars"?DT.CH.filter(c=>!c.ex):k.value==="weapons"?DT.WP.filter(w=>!w.ex):DT.SKINS.map((s,i)=>({id:i,name:s[0]}));$("iList").innerHTML=src.map(x=>'<option value="'+esc(x.name)+'">').join("")};
  if($("iKind")){$("iKind").onchange=fill;fill()}
  const gfill=()=>{const k=$("gKind");if(!k)return;let o=[];if(k.value==="char")o=DT.CH.filter(c=>c.ex).map(c=>[c.id,c.name]);else if(k.value==="weapon")o=DT.WP.filter(w=>w.ex).map(w=>[w.id,w.name]);else if(k.value==="kit")o=window.KITS.slice(10).map(x=>[x.n,x.n+" kit"]);else if(k.value==="power")o=DT.XPOWERS;else o=DT.TITLES.map(t=>[t,t]);
@@ -132,6 +134,18 @@ async function inspect(id){
  if($("gKind")){$("gKind").onchange=gfill;gfill()}
  box.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>act(b.dataset.a));
  box.querySelectorAll("[data-rv]").forEach(b=>b.onclick=()=>run("Revoke this grant?",()=>B.aRevoke(insp.id,+b.dataset.rv),"Revoked"));
+}
+async function loadRecovery(id){
+ const el=$("recoveryHistory");if(!el)return;el.textContent="Loading history...";
+ try{const rows=await B.recoveryHistory(id);el.innerHTML=rows.length?rows.map(r=>'<div class="pl">'+new Date(r.saved_at).toLocaleString()+' · '+r.coins+' coins · '+r.xp+' XP <button class="btn sm" data-restore="'+r.snapshot_id+'">RESTORE</button></div>').join(""):'<p class="mu">No restore points yet.</p>';
+ el.querySelectorAll("[data-restore]").forEach(btn=>btn.onclick=async()=>{if(!confirm("Restore this profile version? The current version will be preserved first."))return;try{await B.restoreSnapshot(Number(btn.dataset.restore));toast("Profile restored");await inspect(id);await loadRecovery(id)}catch(e){toast(e.message)}});
+ }catch(e){el.textContent=e.message||"History unavailable"}
+}
+async function recoveryPanel(){
+ const el=$("recoveryPanel");if(!el||!P||P.role!=="mega")return;
+ try{const st=await B.recoveryStatus();el.innerHTML='<h3>EMERGENCY ADMIN LOCK</h3><p class="mu">'+(st.locked?'Delegated admin powers are LOCKED.':'Delegated admin powers are active.')+'</p><button id="toggleEmergency" class="btn '+(st.locked?'gold':'red')+'">'+(st.locked?'UNLOCK ADMIN POWERS':'LOCK ALL ADMIN POWERS')+'</button><p class="mu">Saved profile versions: '+st.snapshot_count+'. Existing deleted login accounts cannot be restored here.</p>';
+ $("toggleEmergency").onclick=async()=>{if(!confirm(st.locked?"Re-enable admin powers?":"Disable all delegated admin powers immediately?"))return;try{await B.emergencyLock(!st.locked);toast("Emergency lock updated");recoveryPanel()}catch(e){toast(e.message)}};
+ }catch(e){el.textContent=e.message||"Recovery status unavailable"}
 }
 async function run(q,fn,ok){if(q&&!confirm(q))return;try{await fn();toast(ok||"Done");B.localLog&&B.localLog({admin_name:P.username,target_name:insp.username,action:ok||"change"})}catch(e){toast(e.message||"Failed");return}
  if(insp.username===P.username){const fresh=await B.session();if(fresh){P=fresh;mega();hdr()}}

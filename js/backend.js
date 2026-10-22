@@ -27,7 +27,7 @@ async function cload(){
 }
 const API={cloud,
 async signUp(u,p){const e=bad(u,p);if(e)return{error:e};
- if(cloud){const {error}=await sb.rpc("pc_register",{p_username:u,p_password:p});if(error)return{error:error.message||"Could not create account"};return API.signIn(u,p)}
+ if(cloud){const {data,error}=await sb.auth.signUp({email:email(u),password:p,options:{data:{username:u}}});if(error)return{error:error.message||"Could not create account"};if(!data.session)return{error:"Account created. Email confirmation must be disabled for username-only accounts in Supabase Auth settings before signing in."};const pr=await cload();return pr?{p:pr}:{error:"Account created, but profile is still loading. Try signing in."}}
  const a=get("pc_acc")||{},k=u.toLowerCase();if(a[k])return{error:"Username taken on this device"};
  const pr=blank(u);if(u.toLowerCase()===String(C.LOCAL_MEGA_USERNAME||"").toLowerCase())pr.role="mega";
  a[k]={pw:await sha(p),p:pr};set("pc_acc",a);set("pc_sess",k);return{p:pr}},

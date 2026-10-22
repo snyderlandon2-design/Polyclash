@@ -27,7 +27,9 @@ function statsFor(p){const c=DT.CH[p.char]||DT.CH[0],w=DT.WP[p.weapon]||DT.WP[0]
 function makeFighter(o){
  const look=window.Rig.lookFor(o.charId,o.col);const rig=window.Rig.build(look,o.glow);rig.g.traverse(m=>{if(m.isMesh)m.castShadow=!m.userData.ol&&(!low||m.parent===rig.torso||m.parent===rig.hips||m.parent===rig.head)});scene.add(rig.g);
  const f=Object.assign({rig,look,x:0,y:0,z:0,vx:0,vy:0,vz:0,r:0,st:"free",stT:0,cd:[0,0,0,0],m1i:-1,m1T:0,m1CD:0,dashT:0,dashCD:0,dashDir:"F",blk:false,blkT:9,guard:100,awk:0,awT:0,fin:false,evT:0,inv:0,carry:null,pend:[],lock:0,root:null,buff:{},sh:0,ph:0,anState:"idle",fl:0,mv:false,air:false,dead:false,rt:0,hist:[],histT:0},o);
- f.kitDef=KITS[f.kit%KITS.length];nameTag(f);
+ f.kitDef=KITS[f.kit%KITS.length];
+ if(f.isMe&&window.PC_EXTRA_MOVES){const slots=(pf.moveSlots||{})[f.kit]||[0,1,2,3],pool=[...f.kitDef.moves,...PC_EXTRA_MOVES];f.kitDef=Object.assign({},f.kitDef,{moves:slots.map((id,i)=>pool[id]&&((pool[id].unlockXP||0)<=pf.xp||pf.role==="mega")?pool[id]:pool[i])})}
+ nameTag(f);
  const ice=new THREE.Mesh(new THREE.BoxGeometry(2.4,5.4,2.4),new THREE.MeshStandardMaterial({color:0xaee9ff,transparent:true,opacity:.55,roughness:.1}));ice.position.y=2.7;ice.visible=false;rig.g.add(ice);f.ice=ice;
  return f}
 function removeFighter(f){if(f&&f.rig)scene.remove(f.rig.g);if(f&&f.carry)dropProp(f)}
@@ -134,6 +136,23 @@ const K={later,cone,around,shot,hazard,addWall,receive,sendHit,nearest,aim,fwd,f
  buff(f,k,s){f.buff[k]=s},
  FX:()=>window.FX,World:()=>window.World,play:(f,a,d,lk)=>{Rig.play(f,a,d);f.lock=lk!==undefined?lk:d*.85}
 };
+function weaponMove(f){
+ if(!free(f)||f.carry||f.weaponCD>0)return;
+ const w=DT.WP[(f.isMe?pf.weapon:0)]||DT.WP[0],type=w.id%10,col=w.col;
+ f.weaponCD=Math.max(4,9/(f.S.agi||1));f.inv=Math.max(f.inv,.25);
+ if(type===8||type===9){ // Staff and whip: vertical mobility to reach rooftops.
+  f.vy=58;f.hang=0;f.vx*=.5;f.vz*=.5;Rig.play(f,"uppercut",.5);
+  FX.pillar(f.x,f.z,col,13,2,.55);FX.ring(f.x,f.y+2,f.z,col,7,.5);
+  if(f.isMe)feed("SKY VAULT");
+ }else if(type===4||type===7){ // Dagger and gauntlets: quick flurry.
+  Rig.play(f,"barrage",.65);for(let i=0;i<5;i++)later(f,.08+i*.1,()=>{cone(f,4.3,2.1,{dmg:3*dmgMul(f),kind:"light",stun:.4,kb:3,col});FX.spark(f.x,f.y+3,f.z,col,true)});
+ }else if(type===2||type===5){ // Spear and scythe: launcher.
+  Rig.play(f,"uppercut",.48);later(f,.2,()=>{cone(f,7,1.9,{dmg:10*dmgMul(f),kind:"launch",up:31,kb:4,col},7);FX.ring(f.x,f.y+2,f.z,col,7,.45)});
+ }else{ // Swords, axes, hammers, katanas: heavy sweeping strike.
+  Rig.play(f,"m1",.55,Rig.m1Keys(f,3));later(f,.23,()=>{cone(f,6,2.7,{dmg:12*dmgMul(f),kind:"knock",kb:33,up:12,col},7);FX.ring(f.x,f.y+2,f.z,col,7,.45);FX.shake(.4)});
+ }
+ if(f.isMe)pushState(true)
+}
 function useMove(f,i){if(!free(f)||f.carry)return false;if(f.cd[i]>0)return false;const mv=f.kitDef.moves[i];if(!mv)return false;f.cd[i]=mv.cd*(f.awT>0?.6:1)*(f.isMe&&insaneActive()?.25:1)/Math.max(.7,f.S.agi||1);if(f.blk)f.blk=false;aim(f);mv.fn(f,K);if(f.isMe)pushState(true);return true}
 function finisher(f){if(!free(f)||f.awT<=0||f.fin)return false;f.fin=true;aim(f);f.inv=1.4;FX.slowmo(.35,.7);FX.banner(f.kitDef.fin.n.toUpperCase(),"#"+f.kitDef.col.toString(16).padStart(6,"0"));f.kitDef.fin.fn(f,K);if(f.isMe)pushState(true);return true}
 function awaken(f){if(!free(f)||f.awk<100||f.awT>0)return false;f.awk=0;f.awT=30;f.fin=false;f.inv=1.1;Rig.play(f,"awaken",1.0);f.lock=.95;
@@ -205,6 +224,9 @@ function physics(f,dt){
   else{if(wasAir&&impact<-30)FX.dust(f.x,.2,f.z,4);f.vy=0}}
  if(f.root){f.root.t-=dt;f.vx=f.root.vx;f.vz=f.root.vz;if(f.root.h){for(const t of foesOf(f)){if(f.root.hit.has(t))continue;if(Math.hypot(t.x-f.x,t.z-f.z)<2.8&&Math.abs(t.y-f.y)<4){f.root.hit.add(t);sendHit(f,t,Object.assign({},f.root.h))}}World.damageProps(f.x,f.z,1.5,20,f.vx,f.vz,f.y)}if(f.root.col)FX.trail(f.x,f.y,f.z,f.root.col);if(f.root.t<=0){f.root=null;f.vx*=.2;f.vz*=.2}}
  else if(f.dashT>0){f.dashT-=dt;f.vx=f.dashV[0];f.vz=f.dashV[1];if(Math.random()<.6)FX.trail(f.x,f.y,f.z,0xdddddd);if(f.dashT<=0){f.vx*=.25;f.vz*=.25}}
+ // Keep the fighter above the actual surface after combo displacement.
+ if(!Number.isFinite(f.y))f.y=0;
+ if(f.floorY>0&&f.y<f.floorY&&World.roofHeight(f.x,f.z)>=f.floorY-.1){f.y=f.floorY;f.vy=Math.max(0,f.vy)}
  const fr=grounded(f)?(f.st==="ragdoll"?3.5:12):1.2;
  if(f.st==="ragdoll"||f.st==="stun"||!f.ctrl){f.vx*=Math.exp(-fr*dt);f.vz*=Math.exp(-fr*dt)}
  const sp=Math.hypot(f.vx,f.vz);
@@ -236,7 +258,7 @@ function tickStatus(f,dt){
  if(f.awT>0){f.awT-=dt;FX.aura(f,f.kitDef.col,low?.35:.8);if(f.awT<=0){f.rig.glow.forEach(g=>g.visible=false)}}
  if(f.buff.spd>0)FX.aura(f,0xff3333,.3);
  const cdRate=(f.buff.haste>0?2:1)*dt;for(let i=0;i<4;i++)f.cd[i]=Math.max(0,f.cd[i]-cdRate);
- f.extT=Math.max(0,(f.extT||0)-dt);f.wallT=Math.max(0,(f.wallT||0)-dt);f.wjT=Math.max(0,(f.wjT||0)-dt);f.launchImm=Math.max(0,(f.launchImm||0)-dt);f.insaneHit=Math.max(0,(f.insaneHit||0)-dt);if(f.airC){f.airC.t-=dt;if(f.airC.t<=0)f.airC=null}
+ f.weaponCD=Math.max(0,(f.weaponCD||0)-dt);f.extT=Math.max(0,(f.extT||0)-dt);f.wallT=Math.max(0,(f.wallT||0)-dt);f.wjT=Math.max(0,(f.wjT||0)-dt);f.launchImm=Math.max(0,(f.launchImm||0)-dt);f.insaneHit=Math.max(0,(f.insaneHit||0)-dt);if(f.airC){f.airC.t-=dt;if(f.airC.t<=0)f.airC=null}
  f.m1CD=Math.max(0,f.m1CD-dt);f.m1T=Math.max(0,f.m1T-dt);f.dashCD=Math.max(0,f.dashCD-dt);f.evT=Math.max(0,f.evT-dt);f.inv=Math.max(0,f.inv-dt);f.lock=Math.max(0,f.lock-dt);
  if(!f.blk)f.guard=Math.min(100,f.guard+dt*18);else f.blkT+=dt;
  // queued hits
@@ -341,15 +363,15 @@ function onLeave(k){for(const [id,r] of rem)if(id===k||id.indexOf(k)===0){remove
 // ---------- HUD ----------
 function feed(t){$("feed").textContent=t;clearTimeout(feed.t);feed.t=setTimeout(()=>{$("feed").textContent=""},2500)}
 let mvU=null;
-function buildMoves(){const k=me.kitDef,h=k.moves.map((m,i)=>'<button class="mv" data-m="'+i+'"><i>'+(i+1)+'</i><b>'+m.n+'</b><span class="cdv"></span></button>').join("")+'<button class="mv aw" data-m="g"><i>G</i><b>Awaken</b><span class="cdv"></span></button><button class="mv fin" data-m="r"><i>R</i><b>'+k.fin.n+'</b><span class="cdv"></span></button>'+(insaneActive()?'<button class="mv ult" data-m="u"><i>5</i><b>INSANE COMBO</b><span class="cdv"></span></button>':'');
- $("moves").innerHTML=h;$("moves").querySelectorAll(".mv").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();const m=b.dataset.m;if(m==="g")awaken(me);else if(m==="r")finisher(me);else if(m==="u")ultimate();else useMove(me,+m)}));mvU=$("moves").querySelector(".ult");
+function buildMoves(){const k=me.kitDef,h=k.moves.map((m,i)=>'<button class="mv" data-m="'+i+'"><i>'+(i+1)+'</i><b>'+m.n+'</b><span class="cdv"></span></button>').join("")+'<button class="mv weapon" data-m="w"><i>6</i><b>WEAPON SKILL</b><span class="cdv"></span></button>'+'<button class="mv aw" data-m="g"><i>G</i><b>Awaken</b><span class="cdv"></span></button><button class="mv fin" data-m="r"><i>R</i><b>'+k.fin.n+'</b><span class="cdv"></span></button>'+(insaneActive()?'<button class="mv ult" data-m="u"><i>5</i><b>INSANE COMBO</b><span class="cdv"></span></button>':'');
+ $("moves").innerHTML=h;$("moves").querySelectorAll(".mv").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();const m=b.dataset.m;if(m==="g")awaken(me);else if(m==="r")finisher(me);else if(m==="u")ultimate();else if(m==="w")weaponMove(me);else useMove(me,+m)}));mvU=$("moves").querySelector(".ult");
  $("hudName").textContent=pf.username+" · "+k.n+" "+(Rig.STYLE_NAMES[me.look.style]||"")}
 function hud(){
  $("hpB").style.width=clamp(me.hp/me.mhp*100,0,100)+"%";$("hpT").textContent=Math.ceil(Math.max(0,me.hp))+" / "+me.mhp;
  const aw=me.awT>0?me.awT/30*100:me.awk;$("awB").style.width=aw+"%";$("awB").classList.toggle("on",me.awT>0);$("awB").classList.toggle("rdy",me.awk>=100&&me.awT<=0);$("awT").textContent=me.awT>0?"AWAKENED "+Math.ceil(me.awT)+"s":me.awk>=100?"AWAKENING READY [G]":"AWAKENING "+Math.floor(me.awk)+"%";
  $("evB").textContent=me.evT>0?"EVASIVE "+Math.ceil(me.evT)+"s":"EVASIVE READY "+(TOUCH?"(DASH when hit)":"[Q]");$("evB").classList.toggle("rdy",me.evT<=0);
  const mv=$("moves").children;for(let i=0;i<4;i++){const c=me.cd[i],m=mv[i];m.classList.toggle("cd",c>0);m.lastChild.textContent=c>0?c.toFixed(1):""}
- mv[4].classList.toggle("cd",!(me.awk>=100&&me.awT<=0));mv[4].classList.toggle("rdy",me.awk>=100&&me.awT<=0);mv[5].classList.toggle("cd",!(me.awT>0&&!me.fin));mv[5].classList.toggle("rdy",me.awT>0&&!me.fin);
+ mv[4].classList.toggle("cd",me.weaponCD>0);mv[4].lastChild.textContent=me.weaponCD>0?me.weaponCD.toFixed(1):"";mv[5].classList.toggle("cd",!(me.awk>=100&&me.awT<=0));mv[5].classList.toggle("rdy",me.awk>=100&&me.awT<=0);mv[6].classList.toggle("cd",!(me.awT>0&&!me.fin));mv[6].classList.toggle("rdy",me.awT>0&&!me.fin);
  if(combo.n>1&&combo.t>0){$("combo").textContent=combo.n+" HIT"+(combo.n>1?"S":"");$("combo").classList.add("on")}else $("combo").classList.remove("on");
  if(tgt&&tgtT>0&&!tgt.dead){$("tgt").classList.remove("hide");$("tgtN").textContent=tgt.name;$("tgtB").style.width=clamp(tgt.hp/tgt.mhp*100,0,100)+"%"}else $("tgt").classList.add("hide");
  $("extP").classList.toggle("on",me.extT>0);if(me.extT>0)$("extF").style.width=(me.extT/.62*100)+"%";
@@ -426,7 +448,7 @@ function frame(rdt,draw){
 const isTyping=e=>e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA");
 addEventListener("keydown",e=>{if(!on||isTyping(e))return;if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Tab"].indexOf(e.code)>=0)e.preventDefault();if(e.repeat)return;keys[e.code]=1;const c=e.code;
  if(c==="Space"){jumpHeld=true;jump(me)}
- else if(c==="Digit1"||c==="Numpad1")useMove(me,0);else if(c==="Digit2"||c==="Numpad2")useMove(me,1);else if(c==="Digit3"||c==="Numpad3")useMove(me,2);else if(c==="Digit4"||c==="Numpad4")useMove(me,3);else if(c==="Digit5"||c==="Numpad5")ultimate();
+ else if(c==="Digit1"||c==="Numpad1")useMove(me,0);else if(c==="Digit2"||c==="Numpad2")useMove(me,1);else if(c==="Digit3"||c==="Numpad3")useMove(me,2);else if(c==="Digit4"||c==="Numpad4")useMove(me,3);else if(c==="Digit5"||c==="Numpad5")ultimate();else if(c==="Digit6"||c==="Numpad6")weaponMove(me);
  else if(c==="KeyQ")dash(me,me.inDir?me.inDir[0]:0,me.inDir?me.inDir[1]:0);else if(c==="KeyG")awaken(me);else if(c==="KeyR")finisher(me);
  else if(c==="KeyE"){if(me.carry){if(free(me))throwProp(me)}else if(free(me)){const p=World.nearestProp(me.x,me.z,3.2,true);if(p)pickup(me,p)}}
  else if(c==="KeyF"){me.blkT=0}});
@@ -438,7 +460,7 @@ addEventListener("mousemove",e=>{if(on&&document.pointerLockElement){yaw-=e.move
 addEventListener("wheel",e=>{if(on)dist=clamp(dist+e.deltaY*.01,7,24)},{passive:true});
 addEventListener("resize",()=>{if(ren){cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();ren.setSize(innerWidth,innerHeight);FX.resize()}});
 // touch: joystick, camera drag, buttons
-const acts={m1:[()=>{md=1},()=>{md=0}],s0:[()=>useMove(me,0)],s1:[()=>useMove(me,1)],s2:[()=>useMove(me,2)],s3:[()=>useMove(me,3)],dash:[()=>dash(me,me.inDir?me.inDir[0]:0,me.inDir?me.inDir[1]:0)],aw:[()=>{if(me.awT>0)finisher(me);else awaken(me)}],
+const acts={weapon:[()=>weaponMove(me)],m1:[()=>{md=1},()=>{md=0}],s0:[()=>useMove(me,0)],s1:[()=>useMove(me,1)],s2:[()=>useMove(me,2)],s3:[()=>useMove(me,3)],dash:[()=>dash(me,me.inDir?me.inDir[0]:0,me.inDir?me.inDir[1]:0)],aw:[()=>{if(me.awT>0)finisher(me);else awaken(me)}],
  jump:[()=>{jumpHeld=true;jump(me)},()=>{jumpHeld=false}],blk:[()=>{keys.KeyF=1;me.blkT=0},()=>{keys.KeyF=0}],grab:[()=>{if(me.carry){if(free(me))throwProp(me)}else if(free(me)){const p=World.nearestProp(me.x,me.z,3.5,true);if(p)pickup(me,p)}}]};
 document.querySelectorAll(".tb").forEach(b=>{const a=acts[b.dataset.a];if(!a)return;b.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();if(on&&me)a[0]()});if(a[1]){b.addEventListener("pointerup",a[1]);b.addEventListener("pointerleave",a[1]);b.addEventListener("pointercancel",a[1])}});
 $("tLvlDn").onclick=()=>{training.lvl=Math.max(1,training.lvl-1)};$("tLvlUp").onclick=()=>{training.lvl=Math.min(10,training.lvl+1)};

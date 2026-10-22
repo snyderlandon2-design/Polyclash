@@ -25,7 +25,7 @@ async function cload(){
  try{const {data:stt}=await sb.rpc("my_status");if(stt){p.ban=stt.ban||null;p.grants=stt.grants||[]}}catch(e){p.grants=[]}
  return applyGrants(p);
 }
-const API={cloud,
+const API={cloud,sb,
 async signUp(u,p){const e=bad(u,p);if(e)return{error:e};
  if(cloud){try{await usernameAuth("signup",u,p);return API.signIn(u,p)}catch(e){return{error:e.message||"Could not create account"}}}
  const a=get("pc_acc")||{},k=u.toLowerCase();if(a[k])return{error:"Username taken on this device"};

@@ -5,12 +5,13 @@ let aiMode="chat",history=[];
 function aiOwner(){return P()?.role==="mega"&&!P()?.guest}
 function shop(){
  const p=P();if(!p)return;
+ const bagPrices=[1800,600,900,1100,400];
  const categories=[
   ["Characters",D().CH.filter(x=>!x.ex).slice(0,5).map(x=>({id:x.id,name:x.name,rar:x.rar,price:2400+(x.rar||0)*900,field:"chars"}))],
-  ["Skins",D().SKINS.slice(1,6).map((x,i)=>({id:i+1,name:x[0],rar:i%6,price:500+i*180,field:"skins"}))],
-  ["Moves",(window.PC_EXTRA_MOVES||[]).slice(0,5).map((x,i)=>({id:i,name:x.n,rar:i%6,price:900+i*250,field:"boughtMoves"}))],
+  ["Skins",D().SKINS.slice(1,6).map((x,i)=>({id:i+1,name:x[0],rar:i===4?5:i,price:500+i*180,field:"skins"}))],
+  ["Moves",(window.PC_EXTRA_MOVES||[]).slice(0,5).map((x,i)=>({id:i,name:x.n,rar:i===4?5:i,price:900+i*250,field:"boughtMoves"}))],
   ["Weapons",D().WP.filter(x=>!x.ex).slice(0,5).map(x=>({id:x.id,name:x.name,rar:x.rar,price:1200+(x.rar||0)*350,field:"weapons"}))],
-  ["Emotes",["Wave","Cheer","Dance","Bow","Victory Pose"].map((name,i)=>({id:i,name,rar:i%6,price:250+i*125,field:"emotes"}))]
+  ["Emotes",["Wave","Cheer","Dance","Bow","Victory Pose"].map((name,i)=>({id:i,name,rar:i===4?5:i,price:250+i*125,field:"emotes"}))]
  ];
  const target=$("featuredShop");if(!target)return;
  target.innerHTML=categories.map(([name,items])=>'<h4>'+name+'</h4><div class="bags">'+items.map(x=>'<button class="bag" data-field="'+x.field+'" data-id="'+x.id+'"><b>'+esc(x.name)+'</b><small>'+((p[x.field]||[]).includes(x.id)?"OWNED":x.price+" coins")+'</small></button>').join("")+'</div>').join("");
@@ -20,9 +21,9 @@ function shop(){
   if(p.coins<entry.price){App.toast("Not enough coins");return}
   p.coins-=entry.price;p[field].push(id);await App.save();App.toast("Purchased "+entry.name);shop();
  });
- const bag=$("categoryBags");bag.innerHTML=categories.map(([name,items],ci)=>'<button class="btn" data-ci="'+ci+'">'+name+' Bag · '+(500+ci*400)+' coins</button>').join(" ");
+ const bag=$("categoryBags");bag.innerHTML=categories.map(([name,items],ci)=>'<button class="btn" data-ci="'+ci+'">'+name+' Bag · '+bagPrices[ci]+' coins</button>').join(" ");
  bag.querySelectorAll("button").forEach(btn=>btn.onclick=async()=>{
-  const ci=+btn.dataset.ci,cost=500+ci*400;if(p.coins<cost){App.toast("Not enough coins");return}
+  const ci=+btn.dataset.ci,cost=bagPrices[ci];if(p.coins<cost){App.toast("Not enough coins");return}
   const items=categories[ci][1],weights=[55,25,12,5,2,1],eligible=items.map((x,i)=>({x,w:weights[Math.min(5,x.rar||0)]}));let total=eligible.reduce((n,y)=>n+y.w,0),roll=Math.random()*total;let result=eligible[0].x;for(const y of eligible){roll-=y.w;if(roll<=0){result=y.x;break}}
   p.coins-=cost;p[result.field]=p[result.field]||[];if(p[result.field].includes(result.id)){p.coins+=Math.floor(cost*.3);App.toast("Duplicate "+result.name+" — partial refund")}else{p[result.field].push(result.id);App.toast("You won "+result.name+"!")}await App.save();shop();
  });

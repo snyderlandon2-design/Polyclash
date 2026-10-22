@@ -111,7 +111,7 @@ function sidewalkProps(bx,bz){
 function roofHeight(x,z){let h=0;for(const b of B){if(x>b.x0+.7&&x<b.x1-.7&&z>b.z0+.7&&z<b.z1-.7)h=Math.max(h,b.h)}return h}
 function resolve(f,rad){// push a fighter out of buildings + solid props; returns hit info
  let hit=null;rad=rad||.9;
- for(const b of B){if(f.y>b.h)continue;
+ for(const b of B){if(f.y>=b.h-.05)continue;
   if(f.x>b.x0-rad&&f.x<b.x1+rad&&f.z>b.z0-rad&&f.z<b.z1+rad){
    const dl=f.x-(b.x0-rad),dr=b.x1+rad-f.x,dn=f.z-(b.z0-rad),df=b.z1+rad-f.z,m=Math.min(dl,dr,dn,df);
    if(m===dl){f.x=b.x0-rad;hit={nx:-1,nz:0,b}}else if(m===dr){f.x=b.x1+rad;hit={nx:1,nz:0,b}}else if(m===dn){f.z=b.z0-rad;hit={nx:0,nz:-1,b}}else{f.z=b.z1+rad;hit={nx:0,nz:1,b}}

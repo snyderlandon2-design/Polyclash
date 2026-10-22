@@ -31,7 +31,7 @@ function shop(){
   P.coins-=cost;const r=roll(b),list=r.w?P.weapons:P.chars;let t=r.x.name+" ("+DT.RAR[r.x.rar][0]+(r.w?" weapon":"")+")";let dup=false;
   if(list.indexOf(r.x.id)>=0){const back=Math.floor(cost*.3);P.coins+=back;t+=" - DUPLICATE +"+back;dup=true}else{list.push(r.x.id);t+=" - NEW!"}
   const col=hex(DT.RAR[r.x.rar][1]);$("shopRes").innerHTML='<div class="pull" style="--rc:'+col+'">'+Thumbs.img((r.w?"w:":"c:")+r.x.id,"pullimg")+'<div><b style="color:'+col+'">'+esc(r.x.name)+'</b><small>'+DT.RAR[r.x.rar][0]+(r.w?" weapon":" fighter")+(dup?" · duplicate":" · NEW!")+'</small></div></div>';Thumbs.scan($("shopRes"));
-  $("shopRes").classList.remove("pop");void $("shopRes").offsetWidth;$("shopRes").classList.add("pop");hdr();save()});
+  $("shopRes").classList.remove("pop");void $("shopRes").offsetWidth;$("shopRes").classList.add("pop");hdr();save();if(!P.guest)B.logGameEvent("pack opened",{bag:b.n,item:r.x.name,rarity:DT.RAR[r.x.rar][0],duplicate:dup}).catch(()=>{})});
 }
 const ownC=()=>{const a=P.chars.slice();(P.xChars||[]).forEach(i=>{if(a.indexOf(i)<0)a.push(i)});return a};
 const ownW=()=>{const a=P.weapons.slice();(P.xWeapons||[]).forEach(i=>{if(a.indexOf(i)<0)a.push(i)});return a};
@@ -67,7 +67,7 @@ async function board(cat){
 }
 async function challenge(id,name){
  if(!confirm("Challenge "+name+" to a first-to-five KOs duel?"))return;
- try{const d=await B.challengePlayer(id);toast("Challenge sent to "+name);if(duelWatch)clearInterval(duelWatch);
+ try{const d=await B.challengePlayer(id);B.logGameEvent("duel challenged",{opponent:name}).catch(()=>{});toast("Challenge sent to "+name);if(duelWatch)clearInterval(duelWatch);
  let checks=0;duelWatch=setInterval(async()=>{try{checks++;const r=await B.duelCheck(d.id);if(r?.status==="accepted"){clearInterval(duelWatch);duelWatch=null;Game.start({mode:"duel",room:r.room})}else if(r?.status==="declined"||checks>30){clearInterval(duelWatch);duelWatch=null;toast(r?.status==="declined"?"Challenge declined":"Challenge expired")}}catch(e){clearInterval(duelWatch);duelWatch=null}},2000);
  }catch(e){toast(e.message||"Could not challenge player")}
 }
@@ -75,7 +75,7 @@ async function duelInbox(){
  if(!P||P.guest||!B.cloud)return;
  try{const invites=await B.duelInbox();const el=$("duelInbox");if(!el)return;
  el.innerHTML=invites.map(d=>'<div class="row"><span>1v1 challenge received</span><button class="btn gold" data-yes="'+esc(d.id)+'">ACCEPT</button><button class="btn red" data-no="'+esc(d.id)+'">DECLINE</button></div>').join("");
- el.querySelectorAll("[data-yes]").forEach(b=>b.onclick=async()=>{try{const d=await B.duelReply(b.dataset.yes,"accepted");Game.start({mode:"duel",room:d.room})}catch(e){toast(e.message)}});
+ el.querySelectorAll("[data-yes]").forEach(b=>b.onclick=async()=>{try{const d=await B.duelReply(b.dataset.yes,"accepted");B.logGameEvent("duel accepted",{}).catch(()=>{});Game.start({mode:"duel",room:d.room})}catch(e){toast(e.message)}});
  el.querySelectorAll("[data-no]").forEach(b=>b.onclick=async()=>{try{await B.duelReply(b.dataset.no,"declined");duelInbox()}catch(e){toast(e.message)}});
  }catch(e){}
 }

@@ -137,7 +137,8 @@ function buildR6(look,glow){
  const fg=side=>{const m=new (T().Mesh)(new (T().BoxGeometry)(.86,.85,.9),new (T().MeshStandardMaterial)({color:glow||0xffffff,emissive:glow||0xffffff,emissiveIntensity:.8,transparent:true,opacity:.75}));m.position.y=-.85;m.visible=false;side.el.add(m);return m};
  return{g,root,hips,torso,neck,head,L,R,LL,RL,glow:[fg(L),fg(R)],cur:{},look,chest,face:null,sway:[],ex:0};
 }
-function build(look,glow){\n if(look.r6!==false)return buildR6(look,glow);
+function build(look,glow){
+ if(look.r6!==false)return buildR6(look,glow);
  const g=new (T().Group)(),root=piv(0,0,0,g);
  const st=look.style,a=look.arch,big=st===3?1.1:1;root.scale.set(big,big,big);
  const sh=look.shirt,sh2=shade(sh,.78),ac=look.accent,pa=look.pants,pa2=shade(pa,.7),sk=look.skin,sk2=shade(sk,.86),hr=look.hair;

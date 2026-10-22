@@ -32,8 +32,8 @@
 <div id="bagGrid" class="bags"></div><div id="shopRes" class="res">Pick a bag</div><button class="btn" data-go="menuScreen">BACK</button></div></section>
 
 <section id="lockerScreen" class="screen"><div class="card big"><h2>LOCKER</h2><p id="lockInfo" class="mu"></p>
-<div class="row"><button id="tabC" class="btn">CHARACTERS</button><button id="tabW" class="btn">WEAPONS</button><button id="tabS" class="btn">SKINS</button></div>
-<div id="lockGrid" class="cards"></div><button id="upBtn" class="btn gold">UPGRADE</button><button class="btn" data-go="menuScreen">BACK</button></div></section>
+<div class="row"><button id="tabC" class="btn">CHARACTERS</button><button id="tabW" class="btn">WEAPONS</button><button id="tabS" class="btn">SKINS</button><button id="tabM" class="btn">MOVES</button></div>
+<div id="lockGrid" class="cards"></div><div id="moveLoadout" class="hide"></div><button id="upBtn" class="btn gold">UPGRADE</button><button class="btn" data-go="menuScreen">BACK</button></div></section>
 
 <section id="boardScreen" class="screen"><div class="card big"><h2>LEADERBOARD</h2><div id="boardTabs" class="row"></div><div id="boardList" class="list"></div><button class="btn" data-go="menuScreen">BACK</button></div></section>
 
@@ -76,12 +76,12 @@
 <div id="airP" class="airp"></div>
 <div id="train" class="train hide"><div class="trh">TRAINING <small id="tCount"></small></div><div class="trow"><button id="tLvlDn" class="tbn">&#8722;</button><b id="tLvl">Lv 3</b><button id="tLvlUp" class="tbn">+</button></div><button id="tSpawn" class="tbn wide">SPAWN BOT</button><div class="trow"><button id="tAuto" class="tbn">AUTO: ON</button><button id="tClear" class="tbn">CLEAR</button></div></div>
 <div id="moves" class="moves"></div>
-<div id="hint" class="hint">WASD move · Click to lock mouse · Shift sprint · Space jump (Space at a wall = wall jump) · Click/J punch (4 = knockback) · hold Space + 4th = uppercut, then Space = air extend · 3 air hits + click = slam · Q dash (+click = dash punch) · F block (tap = parry) · Q when hit = evasive · E grab/throw · 1-4 moves · G awaken · R finisher</div>
+<div id="hint" class="hint">WASD move · 6 weapon ability · Q while stunned to escape · Click to lock mouse · Shift sprint · Space jump (Space at a wall = wall jump) · Click/J punch (4 = knockback) · hold Space + 4th = uppercut, then Space = air extend · 3 air hits + click = slam · Q dash (+click = dash punch) · F block (tap = parry) · Q when hit = evasive · E grab/throw · 1-4 moves · G awaken · R finisher</div>
 <button id="leaveBtn" class="leave">LEAVE</button>
 <div id="touch" class="hide"><div id="camPad"></div><div id="joy"><div id="knob"></div></div>
-<div class="tbs"><button class="tb" data-a="grab">GRAB</button><button class="tb" data-a="blk">BLOCK</button><button class="tb" data-a="aw">AWAKEN</button>
+<div class="tbs"><button class="tb" data-a="weapon">WEAPON</button><button class="tb" data-a="grab">GRAB</button><button class="tb" data-a="blk">BLOCK</button><button class="tb" data-a="aw">AWAKEN</button>
 <button class="tb" data-a="dash">DASH</button><button class="tb" data-a="jump">JUMP</button><button class="tb atk" data-a="m1">PUNCH</button></div></div>
 </div>
 <aside id="chatPanel" class="chatPanel hide" aria-label="Player chat"><div class="chatHead"><b>PLAYER CHAT</b><button id="chatClose" class="sb">✕</button></div><div class="chatTabs"><button id="chatGroup" class="on">GROUP</button><button id="chatDirect">PRIVATE</button><button id="chatAdmin">ANNOUNCE</button></div><div id="chatToWrap" class="hide"><input id="chatTo" placeholder="Recipient username" maxlength="16"></div><div id="chatMessages" class="chatMessages"></div><form id="chatForm" class="chatForm"><input id="chatText" placeholder="Type a message..." maxlength="500" autocomplete="off"><button type="submit">SEND</button></form><p id="chatError" class="tiny"></p></aside><div id="toast"></div>
-<script src="js/config.js"></script><script src="js/characters.js"></script><script src="js/backend.js"></script><script src="js/rig.js"></script><script src="js/fx.js"></script><script src="js/world.js"></script><script src="js/kits.js"></script><script src="js/thumbs.js"></script><script src="js/game.js"></script><script src="js/app.js"></script><script src="js/chat.js"></script>
+<script src="js/config.js"></script><script src="js/characters.js"></script><script src="js/backend.js"></script><script src="js/rig.js"></script><script src="js/fx.js"></script><script src="js/world.js"></script><script src="js/kits.js"></script><script src="js/thumbs.js"></script><script src="js/moves.js"></script><script src="js/game.js"></script><script src="js/app.js"></script><script src="js/chat.js"></script>
 </body></html>

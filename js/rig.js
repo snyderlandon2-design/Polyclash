@@ -382,14 +382,19 @@ function update(f,dt,time){
  apply(f.rig,c);
 }
 function apply(r,c){
- r.root.position.y=c.y;r.root.rotation.set(c.rx,c.ry,c.rz);
+ // Keep the six-part R6 rig's feet above the ground plane. Ragdoll poses
+ // can rotate the body, but normal locomotion must never bury the legs.
+ const tilt=Math.max(Math.abs(c.rx||0),Math.abs(c.rz||0));
+ const minLift=tilt<.35?0:Math.min(1.1,tilt*.35);
+ r.root.position.y=Math.max(minLift,c.y||0);
+ r.root.rotation.set(c.rx,c.ry,c.rz);
  r.torso.rotation.set(c.tx,c.ty,c.tz);r.neck.rotation.set(c.hx,c.hy,0);
  r.L.sp.rotation.set(c.lax,0,c.lao);r.L.el.rotation.x=0;
  r.R.sp.rotation.set(c.rax,0,-c.rao);r.R.el.rotation.x=0;
  r.LL.hp.rotation.set(c.llx,0,c.llo);r.LL.kn.rotation.x=0;
  r.RL.hp.rotation.set(c.rlx,0,-c.rlo);r.RL.kn.rotation.x=0;
  // keep feet near the ground when crouching (y<0 lowers the hips)
- r.hips.position.y=2.05+Math.min(0,c.y)*.0;
+ r.hips.position.y=2.05;
 }
 window.Rig={build,lookFor,update,play,m1Keys,setQuality,ARCH,STYLE,STYLE_NAMES,A};
 })();

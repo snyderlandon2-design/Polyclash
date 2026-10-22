@@ -237,7 +237,7 @@ function physics(f,dt){
  const roof=World.roofHeight(f.x,f.z);
  if(roof>0&&f.vy<=0&&oldY>=roof-.12&&f.y<=roof){f.y=roof;f.vy=0;f.floorY=roof;f.wj=0;}
  else if(!roof||f.y<roof-.2||f.y>roof+.15)f.floorY=0;
- const hit=World.resolve(f,.9);
+ // R6 arms extend almost two units from the center: reserve their width near solid walls.\n const hit=World.resolve(f,1.92);
  // Safety net: chained knockback, air teleports and wall collisions must never
  // leave the fighter below the arena floor or with non-finite coordinates.
  if(!Number.isFinite(f.y)||f.y<0){f.y=0;f.vy=Math.max(0,Number.isFinite(f.vy)?f.vy:0);f.hang=0;}

@@ -110,7 +110,7 @@ function buildR6(look,glow){
  const box=(w,h,d)=>rbox(w,h,d,.065);
  const chest=part(torso,box(2,2,1),shirt,0,0,0);
  const arm=side=>{const sp=piv(side*1.5,.95,0,torso),el=piv(0,0,0,sp);part(sp,box(1,2,1),skin,0,-1,0);return{sp,el}};
- const leg=side=>{const hp=piv(side*.5,0,0,hips),kn=piv(0,0,0,hp);part(hp,box(1,2,1),pants,0,-1,0);return{hp,kn}};
+ const leg=side=>{const hp=piv(side*.5,-.05,0,hips),kn=piv(0,0,0,hp);part(hp,box(1,2,1),pants,0,-1,0);return{hp,kn}};
  const L=arm(-1),R=arm(1),LL=leg(-1),RL=leg(1);
  // The head is a vertically oriented cylinder with softened rim edges, resting directly on the torso.
  const neck=piv(0,1,0,torso),head=piv(0,.53,0,neck);
@@ -394,6 +394,7 @@ function apply(r,c){
  r.LL.hp.rotation.set(c.llx,0,c.llo);r.LL.kn.rotation.x=0;
  r.RL.hp.rotation.set(c.rlx,0,-c.rlo);r.RL.kn.rotation.x=0;
  // keep feet near the ground when crouching (y<0 lowers the hips)
+ // Keep the torso as one solid block while placing both leg tops directly beneath it.
  r.hips.position.y=2.05;
 }
 window.Rig={build,lookFor,update,play,m1Keys,setQuality,ARCH,STYLE,STYLE_NAMES,A};

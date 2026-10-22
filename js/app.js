@@ -35,10 +35,17 @@ function shop(){
 }
 const ownC=()=>{const a=P.chars.slice();(P.xChars||[]).forEach(i=>{if(a.indexOf(i)<0)a.push(i)});return a};
 const ownW=()=>{const a=P.weapons.slice();(P.xWeapons||[]).forEach(i=>{if(a.indexOf(i)<0)a.push(i)});return a};
+function renderMoveLoadout(){
+ const c=DT.CH[P.char],kit=DT.PIDX[P.xKit||c.pw]||0,all=[...window.KITS[kit].moves,...(window.PC_EXTRA_MOVES||[])];
+ P.moveSlots=P.moveSlots||{};const slots=P.moveSlots[kit]||[0,1,2,3];
+ $("moveLoadout").innerHTML='<h3>CHOOSE YOUR 4 MOVES</h3><p class="mu">Earn XP to unlock Rising Breaker (100 XP) and Phantom Rush (500 XP). Character agility improves cooldowns.</p>'+slots.map((v,i)=>'<label class="lab">Move '+(i+1)+' <select data-slot="'+i+'">'+all.map((m,j)=>'<option value="'+j+'" '+(v===j?'selected':'')+' '+((m.unlockXP||0)>P.xp&&P.role!=="mega"?'disabled':'')+'>'+esc(m.n)+(m.unlockXP?' · '+m.unlockXP+' XP':'')+'</option>').join("")+'</select></label>').join('');
+ $("moveLoadout").querySelectorAll("select").forEach(el=>el.onchange=()=>{const next=slots.slice(),v=+el.value;if(next.some((n,i)=>i!==+el.dataset.slot&&n===v)){toast("Each move can only be equipped once");renderMoveLoadout();return}next[+el.dataset.slot]=v;P.moveSlots[kit]=next;save();toast("Move equipped")});
+}
 function locker(){
  const mg=P.role==="mega",oc=ownC(),ow=ownW();
  const nx=oc.filter(i=>DT.CH[i]&&DT.CH[i].ex).length,wx=ow.filter(i=>DT.WP[i]&&DT.WP[i].ex).length;$("lockInfo").textContent="Fighters "+(oc.length-nx)+"/"+DT.NORMAL_CH+(nx?" (+"+nx+" exclusive)":"")+"  |  Weapons "+(ow.length-wx)+"/"+DT.NORMAL_WP+(wx?" (+"+wx+" exclusive)":"")+"  |  Skins "+P.skins.length+"/"+DT.SKINS.length+(P.xKit?"  |  Granted power: "+P.xKit:"");
- ["tabC","tabW","tabS"].forEach((id,i)=>$(id).classList.toggle("on",tab==="cws"[i]));
+ ["tabC","tabW","tabS","tabM"].forEach((id,i)=>$(id).classList.toggle("on",tab==="cwsm"[i]));
+ $("lockGrid").classList.toggle("hide",tab==="m");$("moveLoadout").classList.toggle("hide",tab!=="m");if(tab==="m"){renderMoveLoadout();return}
  let h="";
  if(tab==="s")h=DT.SKINS.map((k,i)=>{const own=mg||P.skins.indexOf(i)>=0;return'<div class="card2'+(P.skin===i?" sel":"")+(own?"":" lock")+'" data-i="'+i+'" style="--rc:'+(k[1]===null?"#9aa5b1":hex(k[1]))+'">'+Thumbs.img("s:"+P.char+":"+i)+'<b>'+k[0]+'</b><small>'+(own?(P.skin===i?"Equipped":"Owned"):"1000 coins")+'</small></div>'}).join("");
  else{const isC=tab==="c",list=isC?oc:ow,src=isC?DT.CH:DT.WP,cur=isC?P.char:P.weapon;
@@ -138,10 +145,10 @@ $("lvlGrid").innerHTML=["Rookie","Easy","Normal","Skilled","Hard","Veteran","Eli
 document.querySelectorAll("#lvlGrid .btn").forEach(b=>b.onclick=()=>Game.start({mode:"grind",level:+b.dataset.l}));
 $("pubBtn").onclick=()=>Game.start({mode:"online",room:"public-1"});
 $("mkBtn").onclick=()=>{const c=Math.random().toString(36).slice(2,8).toUpperCase();$("onMsg").textContent="Your party code: "+c+" (share it!)";Game.start({mode:"online",room:"p-"+c,host:true});toast("Party code: "+c+" - you are the host")};
-$("myArena").onclick=()=>Game.start({mode:"personal"});
+$("myArena").onclick=()=>go("grindScreen");
 $("joinBtn").onclick=()=>{const c=$("codeIn").value.trim().toUpperCase();if(c.length<4){$("onMsg").textContent="Enter a party code";return}Game.start({mode:"online",room:"p-"+c})};
 $("leaveBtn").onclick=()=>{Game.stop();save();go("menuScreen")};
-$("tabC").onclick=()=>{tab="c";locker()};$("tabW").onclick=()=>{tab="w";locker()};$("tabS").onclick=()=>{tab="s";locker()};
+$("tabC").onclick=()=>{tab="c";locker()};$("tabW").onclick=()=>{tab="w";locker()};$("tabS").onclick=()=>{tab="s";locker()};$("tabM").onclick=()=>{tab="m";locker()};
 $("upBtn").onclick=()=>{const L=P.lv[P.char]||1,c=150*L;if(P.coins<c){toast("Not enough coins");return}P.coins-=c;P.lv[P.char]=L+1;hdr();save();locker()};
 $("selfCoinBtn").onclick=()=>{P.coins+=Number($("selfAmt").value)||0;hdr();save();toast("Coins added")};
 $("selfUnlock").onclick=()=>{P.chars=DT.CH.filter(c=>!c.ex||P.role==="mega").map(c=>c.id);P.weapons=DT.WP.filter(w=>!w.ex||P.role==="mega").map(w=>w.id);P.skins=DT.SKINS.map((x,i)=>i);hdr();save();toast("Everything unlocked")};

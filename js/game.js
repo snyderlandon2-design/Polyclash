@@ -134,7 +134,7 @@ const K={later,cone,around,shot,hazard,addWall,receive,sendHit,nearest,aim,fwd,f
  buff(f,k,s){f.buff[k]=s},
  FX:()=>window.FX,World:()=>window.World,play:(f,a,d,lk)=>{Rig.play(f,a,d);f.lock=lk!==undefined?lk:d*.85}
 };
-function useMove(f,i){if(!free(f)||f.carry)return false;if(f.cd[i]>0)return false;const mv=f.kitDef.moves[i];f.cd[i]=mv.cd*(f.awT>0?.6:1)*(f.isMe&&insaneActive()?.25:1);if(f.blk)f.blk=false;aim(f);mv.fn(f,K);if(f.isMe)pushState(true);return true}
+function useMove(f,i){if(!free(f)||f.carry)return false;if(f.cd[i]>0)return false;const mv=f.kitDef.moves[i];if(!mv)return false;f.cd[i]=mv.cd*(f.awT>0?.6:1)*(f.isMe&&insaneActive()?.25:1)/Math.max(.7,f.S.agi||1);if(f.blk)f.blk=false;aim(f);mv.fn(f,K);if(f.isMe)pushState(true);return true}
 function finisher(f){if(!free(f)||f.awT<=0||f.fin)return false;f.fin=true;aim(f);f.inv=1.4;FX.slowmo(.35,.7);FX.banner(f.kitDef.fin.n.toUpperCase(),"#"+f.kitDef.col.toString(16).padStart(6,"0"));f.kitDef.fin.fn(f,K);if(f.isMe)pushState(true);return true}
 function awaken(f){if(!free(f)||f.awk<100||f.awT>0)return false;f.awk=0;f.awT=30;f.fin=false;f.inv=1.1;Rig.play(f,"awaken",1.0);f.lock=.95;
  FX.slowmo(.4,.6);if(f.isMe){FX.banner("AWAKENED","#"+f.kitDef.col.toString(16).padStart(6,"0"));FX.flash("#fff",.6)}
@@ -151,7 +151,7 @@ function m1(f){
  if(dashing){// dash punch
   f.dashT=0;Rig.play(f,"dashpunch",.38);f.lock=.32;f.m1CD=.7;K.lunge(f,30,.14);
   later(f,.1,()=>{cone(f,4.6*f.S.rng,1.7,{dmg:8*dmgMul(f),kind:"knock",kb:36,up:7,col,guardDmg:60})});if(f.isMe)pushState(true);return}
- const i=f.m1T>0?(f.m1i+1)%4:0;f.m1i=i;f.m1T=.85;
+ const i=f.m1T>0?(f.m1i+1)%4:0;f.m1i=i;f.m1T=1.3;
  if(t){const d=Math.hypot(t.x-f.x,t.z-f.z);if(d>3&&d<9)K.lunge(f,Math.min(26,(d-2.5)*7),.12)}
  if(i<3){Rig.play(f,"m1",.3,Rig.m1Keys(f,i));f.lock=.24;f.anM1=i;
   later(f,.1,()=>cone(f,4.3*f.S.rng,1.9,{dmg:4.5*dmgMul(f),kind:"light",stun:.6,kb:4,col}))}
@@ -178,12 +178,12 @@ function airM1(f,col){const A=f.airC;const ac=col===0xffffff?0x9ff0ff:col;
  else{f.airC=null;f.m1CD=.9;f.m1T=0;Rig.play(f,"downslam",.42);f.lock=.36;f.vy=-14;f.hang=0;
   later(f,.12,()=>{if(cone(f,5*f.S.rng,2.4,{dmg:10*dmgMul(f),kind:"slam",col,guardDmg:80,unblock:1},7)){if(f.isMe){FX.banner("AIR COMBO!","#ffd54a");FX.flash("#fff",.25)}FX.shake(.7)}})}
  if(f.isMe)pushState(true)}
-function wallJump(f){f.wj=(f.wj||0)+1;f.vy=27;f.vx=f.wallN[0]*17;f.vz=f.wallN[1]*17;f.r=Math.atan2(f.wallN[0],f.wallN[1]);f.wallT=0;f.root=null;f.wjT=.35;
+function wallJump(f){f.wj=(f.wj||0)+1;f.vy=39;f.vx=f.wallN[0]*11;f.vz=f.wallN[1]*11;f.r=Math.atan2(f.wallN[0],f.wallN[1]);f.wallT=0;f.root=null;f.wjT=.35;
  Rig.play(f,"dashB",.42);FX.dust(f.x-f.wallN[0],f.y+1.5,f.z-f.wallN[1],5);FX.ring(f.x-f.wallN[0]*.9,f.y+2.5,f.z-f.wallN[1]*.9,0xffffff,3,.3,true,f.r);if(f.isMe){feed("WALL JUMP");pushState(true)}}
 function dash(f,dx,dz){
  if(f.dead)return;
  if(f.st!=="free"){// evasive
-  if(f.evT>0)return;f.evT=pw("inf")&&f.isMe?2:12;interrupt(f);f.st="free";f.stT=0;f.inv=.85;f.vy=10;f.y=Math.max(f.y,.5);const F=fwd(f);f.vx=-F[0]*20;f.vz=-F[1]*20;f.frozen=0;
+  if(f.evT>0)return;f.evT=pw("inf")&&f.isMe?1:5.5;interrupt(f);f.st="free";f.stT=0;f.inv=1.2;f.vy=14;f.y=Math.max(f.y,.5);const F=fwd(f);f.vx=-F[0]*20;f.vz=-F[1]*20;f.frozen=0;
   FX.ring(f.x,f.y+3,f.z,0xffffff,6,.4);FX.burst(f.x,f.y+3,f.z,0xffffff,14,12,.35,.35);if(f.isMe)FX.banner("EVASIVE","#fff");return}
  if(f.lock>0||f.dashCD>0||f.carry)return;
  let dir="F",ddx=dx,ddz=dz;if(!ddx&&!ddz){const F=fwd(f);ddx=F[0];ddz=F[1]}
@@ -200,7 +200,7 @@ function physics(f,dt){
  const oldY=f.y;
  const wasAir=!grounded(f);
  if(f.hang>0){f.hang-=dt;if(f.vy<-3)f.vy=-3;f.vy-=GRAV*.1*dt}else f.vy-=GRAV*dt;f.y+=f.vy*dt;
- if(f.y<=0){const impact=f.vy;f.y=0;
+ if(f.y<=0){const impact=f.vy;f.y=0;f.floorY=0;
   if(f.st==="ragdoll"){if(impact<-30||f.slam){World.crater(f.x,f.z,3);FX.dust(f.x,.3,f.z,10);FX.shake(.5);f.vy=impact<-30?10:0;f.slam=false;f.vx*=.6;f.vz*=.6;if(!f.dead){f.hp-=4;drawTag(f);if(f.hp<=0)hitDone(f,null,0)}}else{f.vy=0}}
   else{if(wasAir&&impact<-30)FX.dust(f.x,.2,f.z,4);f.vy=0}}
  if(f.root){f.root.t-=dt;f.vx=f.root.vx;f.vz=f.root.vz;if(f.root.h){for(const t of foesOf(f)){if(f.root.hit.has(t))continue;if(Math.hypot(t.x-f.x,t.z-f.z)<2.8&&Math.abs(t.y-f.y)<4){f.root.hit.add(t);sendHit(f,t,Object.assign({},f.root.h))}}World.damageProps(f.x,f.z,1.5,20,f.vx,f.vz,f.y)}if(f.root.col)FX.trail(f.x,f.y,f.z,f.root.col);if(f.root.t<=0){f.root=null;f.vx*=.2;f.vz*=.2}}
@@ -218,8 +218,8 @@ function physics(f,dt){
  // leave the fighter below the arena floor or with non-finite coordinates.
  if(!Number.isFinite(f.y)||f.y<0){f.y=0;f.vy=Math.max(0,Number.isFinite(f.vy)?f.vy:0);f.hang=0;}
  if(!Number.isFinite(f.x)||!Number.isFinite(f.z)){f.x=0;f.z=0;f.vx=0;f.vz=0;}
- if(grounded(f)){f.wj=0;if(f.airC)f.airC=null}
- if(hit&&!hit.prop&&!grounded(f)&&f.st==="free"){f.wallT=.3;f.wallN=[hit.nx,hit.nz]}
+ if(grounded(f)){f.wj=0;f.wallBuilding=null;if(f.airC)f.airC=null}
+ if(hit&&!hit.prop&&!grounded(f)&&f.st==="free"){if(f.wallBuilding!==hit.b){f.wallBuilding=hit.b;f.wj=0}f.wallT=.4;f.wallN=[hit.nx,hit.nz]}
  if(hit&&hit.b&&!hit.b.round&&((f.insaneHit>0&&f.st==="ragdoll"&&sp>10)||(f.isMe&&insaneActive()&&(f.dashT>0||f.root)))){World.smash(hit.b,f.x,f.z)}
  if(hit&&f.st==="ragdoll"&&sp>16){// smashed into a wall or prop
   if(hit.prop){World.breakProp(hit.prop,f.vx,f.vz,1.2);f.vx*=.6;f.vz*=.6}

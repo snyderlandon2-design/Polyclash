@@ -40,7 +40,7 @@ function camFwd(){return[-Math.sin(yaw),-Math.cos(yaw)]}
 function aimFor(f){// choose who to attack: closest foe, preferring camera direction for the local player
  if(!f.isMe)return nearest(f,12);let b=null,bs=1e9;const C=camFwd();for(const t of foesOf(f)){const dx=t.x-f.x,dz=t.z-f.z,d=Math.hypot(dx,dz);if(d>14)continue;const dot=(dx*C[0]+dz*C[1])/(d||1);const s=d-dot*5;if(dot>-.3&&s<bs){bs=s;b=t}}return b}
 function aim(f){const t=aimFor(f);if(t)face(f,t.x,t.z);else if(f.isMe){const C=camFwd();if(f.mv||md)f.r=Math.atan2(C[0],C[1])}return t}
-const grounded=f=>f.y<=.01;
+const grounded=f=>f.y<=(f.floorY||0)+.01;
 const free=f=>f.st==="free"&&f.lock<=0&&!f.dead;
 function later(f,s,fn){f.pend.push({t:s,fn})}
 function interrupt(f){f.pend.length=0;f.act=null;f.lock=0;f.root=null;f.dashT=0;f.blk=false;if(f.carry)dropProp(f)}
@@ -179,7 +179,7 @@ function airM1(f,col){const A=f.airC;const ac=col===0xffffff?0x9ff0ff:col;
   later(f,.12,()=>{if(cone(f,5*f.S.rng,2.4,{dmg:10*dmgMul(f),kind:"slam",col,guardDmg:80,unblock:1},7)){if(f.isMe){FX.banner("AIR COMBO!","#ffd54a");FX.flash("#fff",.25)}FX.shake(.7)}})}
  if(f.isMe)pushState(true)}
 function wallJump(f){f.wj=(f.wj||0)+1;f.vy=27;f.vx=f.wallN[0]*17;f.vz=f.wallN[1]*17;f.r=Math.atan2(f.wallN[0],f.wallN[1]);f.wallT=0;f.root=null;f.wjT=.35;
- Rig.play(f,"m1",.42,Rig.m1Keys({look:{style:2}},3));FX.dust(f.x-f.wallN[0],f.y+1.5,f.z-f.wallN[1],5);FX.ring(f.x-f.wallN[0]*.9,f.y+2.5,f.z-f.wallN[1]*.9,0xffffff,3,.3,true,f.r);if(f.isMe){feed("WALL JUMP");pushState(true)}}
+ Rig.play(f,"dashB",.42);FX.dust(f.x-f.wallN[0],f.y+1.5,f.z-f.wallN[1],5);FX.ring(f.x-f.wallN[0]*.9,f.y+2.5,f.z-f.wallN[1]*.9,0xffffff,3,.3,true,f.r);if(f.isMe){feed("WALL JUMP");pushState(true)}}
 function dash(f,dx,dz){
  if(f.dead)return;
  if(f.st!=="free"){// evasive
@@ -197,6 +197,7 @@ function jump(f){if(f.dead)return;
  f.vy=(f.carry?18:25)*(f.isMe&&insaneActive()?1.35:1);FX.dust(f.x,.2,f.z,3)}
 // ---------- per-fighter update ----------
 function physics(f,dt){
+ const oldY=f.y;
  const wasAir=!grounded(f);
  if(f.hang>0){f.hang-=dt;if(f.vy<-3)f.vy=-3;f.vy-=GRAV*.1*dt}else f.vy-=GRAV*dt;f.y+=f.vy*dt;
  if(f.y<=0){const impact=f.vy;f.y=0;
@@ -208,6 +209,10 @@ function physics(f,dt){
  if(f.st==="ragdoll"||f.st==="stun"||!f.ctrl){f.vx*=Math.exp(-fr*dt);f.vz*=Math.exp(-fr*dt)}
  const sp=Math.hypot(f.vx,f.vz);
  f.x+=f.vx*dt;f.z+=f.vz*dt;
+ // Roof landing: only catch a descending fighter who approached from above.
+ const roof=World.roofHeight(f.x,f.z);
+ if(roof>0&&f.vy<=0&&oldY>=roof-.12&&f.y<=roof){f.y=roof;f.vy=0;f.floorY=roof;f.wj=0;}
+ else if(!roof||f.y<roof-.2||f.y>roof+.15)f.floorY=0;
  const hit=World.resolve(f,.9);
  // Safety net: chained knockback, air teleports and wall collisions must never
  // leave the fighter below the arena floor or with non-finite coordinates.

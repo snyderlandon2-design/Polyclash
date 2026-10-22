@@ -4,5 +4,8 @@ const H=(f,k,damage)=>({dmg:damage*(f.S?.dmg||1),kind:k,col:f.kitDef.col});
 window.PC_EXTRA_MOVES=[
  {n:"Rising Breaker",cd:8,rng:6,unlockXP:100,fn(f,K){K.play(f,"uppercut",.48);K.later(f,.2,()=>{const h=Object.assign(H(f,"launch",9),{up:34,kb:4,stun:.6});K.cone(f,5.5,2.1,h,7);FX.ring(f.x,f.y+2,f.z,f.kitDef.col,5,.4);FX.shake(.35)})}},
  {n:"Phantom Rush",cd:11,rng:13,unlockXP:500,fn(f,K){K.play(f,"barrage",.8);K.lunge(f,34,.36);for(let i=0;i<6;i++)K.later(f,.09+i*.1,()=>{K.cone(f,4.6,2.1,Object.assign(H(f,"light",2.3),{stun:.45,kb:2}),6);FX.burst(f.x,f.y+3,f.z,f.kitDef.col,5,7,.2,.3)});K.later(f,.78,()=>{K.cone(f,5,2.3,Object.assign(H(f,"knock",8),{kb:30,up:9}),7);FX.ring(f.x,f.y+2,f.z,0xffffff,7,.4)})}}
-];
+,
+ {n:"Super Punch",cd:6,rng:5,unlockXP:1200,fn(f,K){K.play(f,"heavy",.48);K.later(f,.22,()=>{K.cone(f,5,1.5,Object.assign(H(f,"knock",16),{kb:36,up:6}),7);FX.ring(f.x,f.y+2,f.z,0xffcc55,5,.35)})}},
+ {n:"Ice Burst",cd:10,rng:6,unlockXP:1800,fn(f,K){K.play(f,"slam",.62);K.later(f,.28,()=>{K.cone(f,6,3,Object.assign(H(f,"stun",11),{stun:1.2,kb:8}),7);FX.ring(f.x,f.y+2,f.z,0x7deaff,7,.55)})}},
+ {n:"Thunder Jab",cd:7,rng:7,unlockXP:2400,fn(f,K){K.play(f,"thrust",.4);K.later(f,.17,()=>{K.cone(f,6.5,1.25,Object.assign(H(f,"stun",13),{stun:.8,kb:12}),7);FX.burst(f.x,f.y+3,f.z,0xffe14d,12,8,.3,.4)})}}];
 })();

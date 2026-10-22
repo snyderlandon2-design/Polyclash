@@ -38,7 +38,7 @@ const ownW=()=>{const a=P.weapons.slice();(P.xWeapons||[]).forEach(i=>{if(a.inde
 function renderMoveLoadout(){
  const c=DT.CH[P.char],kit=DT.PIDX[P.xKit||c.pw]||0,all=[...window.KITS[kit].moves,...(window.PC_EXTRA_MOVES||[])];
  P.moveSlots=P.moveSlots||{};const slots=P.moveSlots[kit]||[0,1,2,3];
- $("moveLoadout").innerHTML='<h3>CHOOSE YOUR 4 MOVES</h3><p class="mu">Earn XP to unlock Rising Breaker (100 XP) and Phantom Rush (500 XP). Character agility improves cooldowns.</p>'+slots.map((v,i)=>'<label class="lab">Move '+(i+1)+' <select data-slot="'+i+'">'+all.map((m,j)=>'<option value="'+j+'" '+(v===j?'selected':'')+' '+((m.unlockXP||0)>P.xp&&P.role!=="mega"?'disabled':'')+'>'+esc(m.n)+(m.unlockXP?' · '+m.unlockXP+' XP':'')+'</option>').join("")+'</select></label>').join('');
+ $("moveLoadout").innerHTML='<h3>CHOOSE YOUR 4 MOVES</h3><p class="mu">Earn XP or buy move licenses in the Item Shop. Choose any four unlocked moves. Character agility improves cooldowns.</p>'+slots.map((v,i)=>'<label class="lab">Move '+(i+1)+' <select data-slot="'+i+'">'+all.map((m,j)=>'<option value="'+j+'" '+(v===j?'selected':'')+' '+((m.unlockXP||0)>P.xp&&P.role!=="mega"&&!(P.boughtMoves||[]).includes(j-window.KITS[kit].moves.length)?'disabled':'')+'>'+esc(m.n)+(m.unlockXP?' · '+m.unlockXP+' XP':'')+'</option>').join("")+'</select></label>').join('');
  $("moveLoadout").querySelectorAll("select").forEach(el=>el.onchange=()=>{const next=slots.slice(),v=+el.value;if(next.some((n,i)=>i!==+el.dataset.slot&&n===v)){toast("Each move can only be equipped once");renderMoveLoadout();return}next[+el.dataset.slot]=v;P.moveSlots[kit]=next;save();toast("Move equipped")});
 }
 function locker(){

@@ -52,28 +52,44 @@ function shop(){
 function aiSetup(){
  const send=$("aiSend");if(!send)return;
  const runCommand=async(message)=>{
-  const coin=message.match(/^(?:give|add)\s+(?:user(?:name)?\s+)?([a-z0-9_]{2,24})\s+(\d{1,9})\s+coins?$/i)||message.match(/^(?:give|add)\s+(\d{1,9})\s+coins?\s+to\s+([a-z0-9_]{2,24})$/i);
-  if(coin){const first=/^\d+$/.test(coin[1]),username=first?coin[2]:coin[1],amount=Number(first?coin[1]:coin[2]);if(amount<1||amount>1000000)return "Choose 1 to 1,000,000 coins per command.";
-   const found=await Backend.aFind(username),player=found.find(x=>x.username.toLowerCase()===username.toLowerCase());if(!player)return "No exact username match: "+username+". Nothing changed.";
-   if(!confirm("Give "+player.username+" "+amount.toLocaleString()+" coins?"))return "Cancelled. Nothing changed.";
-   await Backend.aCoins(player.id,amount);return "Done: added "+amount.toLocaleString()+" coins to "+player.username+". The server recorded this admin action.";
-  }
-  const shopCmd=message.match(/^(?:replace|set|change)\s+(characters?|skins?|moves?|weapons?|emotes?)\s+(?:slot\s*)?([1-5])\s+(?:with|to)\s+(.+?)(?:\s+for\s+(\d+)\s+coins?)?$/i);
-  if(shopCmd){if(!Backend.sb)return "Shop editing requires online owner login.";const names={character:"Characters",skin:"Skins",move:"Moves",weapon:"Weapons",emote:"Emotes"};const cat=names[shopCmd[1].toLowerCase().replace(/s$/,"")],slot=Number(shopCmd[2])-1,search=shopCmd[3].trim().toLowerCase();let items=[];
-   if(cat==="Characters")items=D().CH.filter(x=>!x.ex).map(x=>({id:x.id,name:x.name}));
-   if(cat==="Weapons")items=D().WP.filter(x=>!x.ex).map(x=>({id:x.id,name:x.name}));
-   if(cat==="Skins")items=D().SKINS.map((x,i)=>({id:i,name:x[0]}));
-   if(cat==="Moves")items=(window.PC_EXTRA_MOVES||[]).map((x,i)=>({id:i,name:x.n}));
-   if(cat==="Emotes")items=["Wave","Cheer","Dance","Bow","Victory Pose"].map((name,i)=>({id:i,name}));
-   const match=items.find(x=>x.name.toLowerCase()===search);if(!match)return "No exact "+cat+" item named "+shopCmd[3]+". Nothing changed.";
-   const old=serverSlots?.find(x=>x.category===cat&&x.slot===slot),price=shopCmd[4]?Number(shopCmd[4]):old?.price||500;
-   if(!Number.isSafeInteger(price)||price<1||price>100000000)return "Invalid price.";
-   if(!confirm("Set "+cat+" slot "+(slot+1)+" to "+match.name+" for "+price.toLocaleString()+" coins for all players?"))return "Cancelled.";
-   const {error}=await Backend.sb.rpc("owner_shop_slot",{p_category:cat,p_slot:slot,p_item_id:match.id,p_price:price});if(error)throw error;
-   await fetchSlots();shop();return "Updated "+cat+" slot "+(slot+1)+" to "+match.name+" at "+price.toLocaleString()+" coins for all online players.";
-  }
-  if(/\b(?:replace|swap|change|shop|item)\b/i.test(message))return "Use: Replace Skins slot 1 with [exact skin name] for 900 coins. No change made.";
-  return "I only handle specific game commands. Try: Give Landon2 500 coins, or: Replace [item] with [item] in the shop. I will not answer unrelated questions or make random changes.";
+  if(!Backend.sb)return "Sign in as the owner to edit the shared shop.";
+  await fetchSlots();
+  const categories={
+   Characters:D().CH.filter(x=>!x.ex).map(x=>({id:x.id,name:x.name})),
+   Skins:D().SKINS.map((x,id)=>({id,name:x[0]})),
+   Moves:(window.PC_EXTRA_MOVES||[]).map((x,id)=>({id,name:x.n})),
+   Weapons:D().WP.filter(x=>!x.ex).map(x=>({id:x.id,name:x.name})),
+   Emotes:["Wave","Cheer","Dance","Bow","Victory Pose"].map((name,id)=>({id,name}))
+  };
+  const clean=x=>String(x).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  const query=clean(message),mentioned=Object.entries(categories).flatMap(([category,items])=>items.filter(x=>query.includes(clean(x.name))&&clean(x.name).length>2).map(x=>({...x,category})));
+  const cat=Object.keys(categories).find(c=>new RegExp("\\b"+c.toLowerCase().replace(/s$/,"")+"s?\\b").test(query));
+  const priceMatch=message.match(/(?:for|cost|price|at|to)\s*\$?([\d,]+)\s*(?:coins?)?\b/i);
+  const price=priceMatch?Number(priceMatch[1].replaceAll(",","")):null;
+  const slotMatch=message.match(/(?:slot|position|spot|number|#)\s*([1-5])\b/i)||message.match(/\b(first|second|third|fourth|fifth)\b/i);
+  const wordSlots={first:0,second:1,third:2,fourth:3,fifth:4};
+  let slot=slotMatch?(Number.isInteger(Number(slotMatch[1]))?Number(slotMatch[1])-1:wordSlots[slotMatch[1].toLowerCase()]):null;
+  const listed=serverSlots||[];
+  if(!/(shop|item|replace|swap|change|put|feature|stock|sell|price|cost|slot|remove|add)/i.test(message))return "I only manage the item shop. Tell me naturally what item to change, where to put it, or what it should cost.";
+  const target=mentioned.length===1?mentioned[0]:mentioned.length>1?mentioned[mentioned.length-1]:null;
+  const old=mentioned.length>1?mentioned[0]:null;
+  const category=cat||target?.category||old?.category;
+  if(!category)return "Which shop category should I change: characters, skins, moves, weapons, or emotes?";
+  if(mentioned.length>2)return "I found several item names. Which item should be featured?";
+  if(old&&target&&old.category!==target.category)return "Those items are from different categories. Which category should I edit?";
+  if(slot===null&&old){const current=listed.filter(x=>x.category===category&&x.item_id===old.id);if(current.length===1)slot=current[0].slot}
+  if(slot===null&&target&&/price|cost/i.test(message)){const current=listed.filter(x=>x.category===category&&x.item_id===target.id);if(current.length===1)slot=current[0].slot}
+  if(slot===null)return "Which of the five "+category.toLowerCase()+" shop positions should I change? You can say 'the first one' or 'slot 3'.";
+  const current=listed.find(x=>x.category===category&&x.slot===slot);
+  const item=target||categories[category].find(x=>x.id===current?.item_id);
+  if(!item)return "Which "+category.toLowerCase()+" item should go there? Tell me its name.";
+  const finalPrice=price??current?.price??500;
+  if(!Number.isSafeInteger(finalPrice)||finalPrice<1||finalPrice>100000000)return "Choose a valid price from 1 to 100,000,000 coins.";
+  const description=category+" slot "+(slot+1)+": "+item.name+" for "+finalPrice.toLocaleString()+" coins";
+  if(!confirm("Update everyone's item shop?\n"+description))return "Cancelled. The shop was not changed.";
+  const {error}=await Backend.sb.rpc("owner_shop_slot",{p_category:category,p_slot:slot,p_item_id:item.id,p_price:finalPrice});
+  if(error)throw error;
+  await fetchSlots();shop();return "Updated the shared shop: "+description+".";
  };
  const paint=()=>{$("aiHistory").innerHTML=history.map(m=>'<p><b>'+ (m.role==="user"?"YOU":"AI")+'</b>: '+esc(m.content)+'</p>').join("");$("aiHistory").scrollTop=$("aiHistory").scrollHeight};
  for(const [id,mode] of [["aiModeChat","chat"],["aiModeAdd","add"]])$(id).onclick=()=>{aiMode="add";App.toast("Owner command mode only — no general questions")};

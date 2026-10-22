@@ -1,637 +1,87 @@
-<!DOCTYPE html>  
-<html lang="en">  
-<head>  
-<meta charset="UTF-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  
-<title>PolyClash Arena 3D</title>  
-<style>  
-  :root {  
-    --bg: #090a0f;  
-    --panel: #131722;  
-    --accent: #6c5ce7;  
-    --accent-glow: rgba(108, 92, 231, 0.4);  
-    --text: #f5f6fa;  
-    --gold: #f1c40f;  
-  }  
-  
-  body {  
-    background-color: var(--bg);  
-    color: var(--text);  
-    font-family: 'Segoe UI', system-ui, sans-serif;  
-    margin: 0;  
-    padding: 0;  
-    overflow: hidden;  
-    user-select: none;  
-    -webkit-user-select: none;  
-  }  
-  
-  /* Screens */  
-  .screen {  
-    position: absolute;  
-    top: 0; left: 0; width: 100vw; height: 100vh;  
-    display: none;  
-    flex-direction: column;  
-    justify-content: center;  
-    align-items: center;  
-    background: radial-gradient(circle at center, #1b1f38 0%, var(--bg) 100%);  
-    z-index: 10;  
-    box-sizing: border-box;  
-    padding: 20px;  
-  }  
-  .screen.active { display: flex; }  
-  
-  /* UI Components */  
-  h1 {  
-    font-size: 3rem;  
-    font-weight: 900;  
-    letter-spacing: 3px;  
-    margin: 0 0 10px 0;  
-    background: linear-gradient(45deg, #a29bfe, #ff7675, var(--gold));  
-    -webkit-background-clip: text;  
-    -webkit-text-fill-color: transparent;  
-    text-shadow: 0 0 30px rgba(162,155,254,0.3);  
-  }  
-  
-  .btn {  
-    background: linear-gradient(135deg, var(--accent), #4834d4);  
-    color: white;  
-    border: none;  
-    padding: 14px 32px;  
-    font-size: 1.1rem;  
-    font-weight: bold;  
-    border-radius: 12px;  
-    cursor: pointer;  
-    box-shadow: 0 6px 20px var(--accent-glow);  
-    transition: all 0.2s ease;  
-    margin: 8px;  
-    letter-spacing: 1px;  
-  }  
-  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px var(--accent-glow); filter: brightness(1.1); }  
-  .btn:active { transform: translateY(1px); }  
-  .btn-gold { background: linear-gradient(135deg, #f1c40f, #f39c12); box-shadow: 0 6px 20px rgba(241,196,15,0.4); color: #222; }  
-  .btn-red { background: linear-gradient(135deg, #ff7675, #d63031); box-shadow: 0 6px 20px rgba(255,118,117,0.4); }  
-  
-  /* Currencies */  
-  .currency-bar {  
-    position: absolute;  
-    top: 20px; right: 30px;  
-    display: flex;  
-    gap: 20px;  
-    font-size: 1.2rem;  
-    font-weight: bold;  
-    background: rgba(19, 23, 34, 0.8);  
-    padding: 10px 20px;  
-    border-radius: 30px;  
-    border: 1px solid rgba(255,255,255,0.1);  
-    z-index: 20;  
-  }  
-  .coin { color: var(--gold); }  
-  
-  /* Input fields */  
-  input {  
-    background: rgba(0,0,0,0.5);  
-    border: 2px solid #2d3436;  
-    color: white;  
-    padding: 12px 20px;  
-    font-size: 1rem;  
-    border-radius: 8px;  
-    outline: none;  
-    margin: 10px;  
-    width: 280px;  
-    text-align: center;  
-  }  
-  input:focus { border-color: var(--accent); }  
-  
-  /* HUD */  
-  #hud {  
-    position: absolute;  
-    top: 0; left: 0; width: 100%; height: 100%;  
-    pointer-events: none;  
-    display: none;  
-    z-index: 5;  
-    box-sizing: border-box;  
-    padding: 20px;  
-  }  
-  #hud.active { display: block; }  
-  .health-container {  
-    display: flex;  
-    justify-content: space-between;  
-    width: 100%;  
-    max-width: 900px;  
-    margin: 0 auto;  
-    font-size: 1.2rem;  
-    font-weight: bold;  
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8);  
-  }  
-  
-  /* Mobile Controls */  
-  #mobileControls {  
-    position: absolute;  
-    bottom: 20px; left: 0; width: 100%;  
-    display: none;  
-    justify-content: space-between;  
-    padding: 0 30px;  
-    box-sizing: border-box;  
-    pointer-events: auto;  
-    z-index: 6;  
-  }  
-  .d-pad, .action-pad { display: flex; gap: 15px; }  
-  .control-btn {  
-    width: 75px; height: 75px;  
-    background: rgba(255,255,255,0.15);  
-    border: 2px solid rgba(255,255,255,0.3);  
-    border-radius: 50%;  
-    color: white;  
-    font-size: 1.4rem;  
-    font-weight: bold;  
-    display: flex; align-items: center; justify-content: center;  
-    backdrop-filter: blur(5px);  
-    cursor: pointer;  
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4);  
-  }  
-  .control-btn:active { background: rgba(255,255,255,0.35); transform: scale(0.95); }  
-  
-  /* Admin Panel */  
-  #adminModal {  
-    display: none;  
-    position: fixed;  
-    top: 50%; left: 50%; transform: translate(-50%, -50%);  
-    background: #1e272e;  
-    border: 3px solid #ff4757;  
-    border-radius: 16px;  
-    padding: 30px;  
-    z-index: 100;  
-    width: 90%; max-width: 600px;  
-    box-shadow: 0 20px 50px rgba(0,0,0,0.8);  
-  }  
-  #adminModal textarea {  
-    width: 100%; height: 200px; background: #0b0e14; color: #00d2d3;  
-    border: 1px solid #485460; border-radius: 8px; font-family: monospace;  
-    padding: 10px; box-sizing: border-box; font-size: 0.85rem; resize: vertical;  
-  }  
-  
-  /* Gacha Modal / Grids */  
-  .modal-overlay {  
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;  
-    background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);  
-    display: none; justify-content: center; align-items: center; z-index: 50;  
-  }  
-  .panel-box {  
-    background: var(--panel); border: 2px solid rgba(255,255,255,0.1);  
-    border-radius: 20px; padding: 30px; width: 90%; max-width: 750px;  
-    max-height: 85vh; overflow-y: auto; text-align: center;  
-    box-shadow: 0 15px 40px rgba(0,0,0,0.8);  
-  }  
-  .grid-20 {  
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));  
-    gap: 12px; margin: 20px 0; max-height: 400px; overflow-y: auto; padding: 5px;  
-  }  
-  .item-card {  
-    background: rgba(255,255,255,0.03); border: 2px solid rgba(255,255,255,0.08);  
-    border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: 0.2s;  
-  }  
-  .item-card:hover { border-color: var(--accent); transform: translateY(-3px); }  
-  .item-card.unlocked { border-color: #2ed573; background: rgba(46, 213, 115, 0.05); }  
-  
-  canvas { display: block; }  
-</style>  
-  
-<!-- Three.js Library -->  
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>  
-</head>  
-<body>  
-  
-  <!-- Currency / Points Display -->  
-  <div class="currency-bar">  
-    <div>🪙 <span id="coinCount" class="coin">500</span> pts</div>  
-    <div>⭐ Level <span id="playerLevel">1</span></div>  
-  </div>  
-  
-  <!-- 1. MODE SELECT SCREEN -->  
-  <div id="modeScreen" class="screen active">  
-    <h1>POLYCLASH ARENA</h1>  
-    <p style="color: #a4b0be; margin-bottom: 30px;">High-Graph 3D Battlegrounds</p>  
-    <button class="btn" onclick="openInputSelect('quick')">🤖 Quick Play vs Bots</button>  
-    <button class="btn btn-gold" onclick="openInputSelect('public')">🌐 Public Online Zone</button>  
-    <div style="margin-top: 20px; display: flex; gap: 10px;">  
-      <button class="btn" style="background:#2f3640;" onclick="showScreen('lockerScreen')">🎒 Locker & Shop</button>  
-      <button class="btn" style="background:#2ed573;" onclick="openGacha()">🎰 Character Summon</button>  
-    </div>  
-    <button class="btn btn-red" style="margin-top: 30px; font-size:0.9rem;" onclick="promptAdmin()">🔒 Enter Admin Code</button>  
-  </div>  
-  
-  <!-- 2. INPUT SELECT SCREEN -->  
-  <div id="inputSelectScreen" class="screen">  
-    <h1>CHOOSE CONTROL TYPE</h1>  
-    <p style="color: #a4b0be; margin-bottom: 30px;">How would you like to play?</p>  
-    <button class="btn btn-gold" onclick="launchGame('mobile')">📱 Mobile Touch Buttons</button>  
-    <button class="btn" onclick="launchGame('pc')">⌨️ Keyboard & Mouse</button>  
-    <br>  
-    <button class="btn" style="background:#2f3640;" onclick="showScreen('modeScreen')">⬅ Back</button>  
-  </div>  
-  
-  <!-- 3. LOCKER & SHOP SCREEN -->  
-  <div id="lockerScreen" class="screen">  
-    <h1>LOCKER & SHOP</h1>  
-    <p style="color: #a4b0be;">Equip your fighters and upgrade combat stats.</p>  
-    <div class="panel-box" style="margin-top:15px;">  
-      <h3>Your Roster (20 Fighters)</h3>  
-      <div id="rosterGrid" class="grid-20"></div>  
-      <div id="selectedInfo" style="margin-top:15px; font-weight:bold;">Selected: None</div>  
-      <button class="btn btn-gold" onclick="upgradeFighter()">⚡ Upgrade Fighter Stats (150 pts)</button>  
-    </div>  
-    <button class="btn" style="margin-top:20px;" onclick="showScreen('modeScreen')">🏠 Main Menu</button>  
-  </div>  
-  
-  <!-- 4. GACHA SUMMON SCREEN -->  
-  <div id="gachaModal" class="modal-overlay">  
-    <div class="panel-box">  
-      <h2>🎰 Character Summon Portal</h2>  
-      <p style="color:#a4b0be;">Roll for rare fighters! Higher rarity = lower drop rate. Rolling duplicates refunds 50% of the cost!</p>  
-      <div id="gachaResult" style="font-size: 1.5rem; margin: 30px 0; font-weight: bold; color: var(--gold);">Ready to Roll?</div>  
-      <button class="btn btn-gold" onclick="rollGacha(1)">Roll 1x (Cost: 100 pts)</button>  
-      <button class="btn" style="background:#2f3640;" onclick="closeGacha()">Close Portal</button>  
-    </div>  
-  </div>  
-  
-  <!-- ADMIN PANEL MODAL -->  
-  <div id="adminModal">  
-    <h2 style="color:#ff4757; margin-top:0;">🛡️ Admin Console</h2>  
-    <p id="adminStatusText" style="font-size:0.9rem; color:#a4b0be;"></p>  
-    <div id="codeEditorContainer" style="display:none;">  
-      <p style="font-size:0.85rem; color:#00d2d3;">Master Code Paster (Update entire game code live):</p>  
-      <textarea id="liveCodeInput"></textarea>  
-      <button class="btn btn-red" onclick="applyLiveUpdate()">🚀 Deploy Code Update</button>  
-    </div>  
-    <div style="margin-top:20px; display:flex; justify-content:space-between;">  
-      <button class="btn btn-gold" onclick="adminGivePoints()">💰 Give +1000 Points</button>  
-      <button class="btn" style="background:#2f3640;" onclick="closeAdminModal()">Close</button>  
-    </div>  
-  </div>  
-  
-  <!-- 5. GAMEPLAY HUD & ARENA -->  
-  <div id="hud">  
-    <div class="health-container">  
-      <div style="color: #00d2d3;">Player: <span id="pHealth">100</span> HP</div>  
-      <div style="color: #ff4757;"><span id="enemyLabel">CPU Bot</span>: <span id="cHealth">100</span> HP</div>  
-    </div>  
-    <button class="btn" style="position: absolute; top: 20px; left: 20px; pointer-events: auto; padding: 8px 16px; font-size:0.9rem;" onclick="returnToMenu()">🚪 Menu</button>  
-  </div>  
-  
-  <!-- Mobile On-Screen Controls -->  
-  <div id="mobileControls">  
-    <div class="d-pad">  
-      <div class="control-btn" ontouchstart="setKey('ArrowLeft', true)" ontouchend="setKey('ArrowLeft', false)">◀</div>  
-      <div class="control-btn" ontouchstart="setKey('ArrowRight', true)" ontouchend="setKey('ArrowRight', false)">▶</div>  
-    </div>  
-    <div class="action-pad">  
-      <div class="control-btn" style="background:rgba(241,196,15,0.3);" ontouchstart="triggerJump()">⬆</div>  
-      <div class="control-btn" style="background:rgba(255,118,117,0.4);" ontouchstart="triggerAttack()">⚔️</div>  
-    </div>  
-  </div>  
-  
-<script>  
-// --- GAME DATA & 20 CHARACTERS SETUP ---  
-let gameData = {  
-  points: 500,  
-  level: 1,  
-  controlMode: 'mobile',  
-  selectedChar: 0,  
-  unlocked: [0], // indices of unlocked fighters  
-  levels: Array(20).fill(1)  
-};  
-  
-const characters = [  
-  { name: "Noobite", rarity: "Common", rate: 40, color: 0x95a5a6 },  
-  { name: "Blade Runner", rarity: "Common", rate: 35, color: 0x3498db },  
-  { name: "Cyber Scrapper", rarity: "Common", rate: 30, color: 0x2ecc71 },  
-  { name: "Neon Puncher", rarity: "Common", rate: 28, color: 0xe67e22 },  
-  { name: "Volt Striker", rarity: "Uncommon", rate: 20, color: 0xf1c40f },  
-  { name: "Shadow Fiend", rarity: "Uncommon", rate: 18, color: 0x8e44ad },  
-  { name: "Iron Bastion", rarity: "Uncommon", rate: 15, color: 0x7f8c8d },  
-  { name: "Blaze Knight", rarity: "Uncommon", rate: 12, color: 0xe74c3c },  
-  { name: "Frost Walker", rarity: "Rare", rate: 8, color: 0x00d2d3 },  
-  { name: "Toxic Viper", rarity: "Rare", rate: 7, color: 0x27ae60 },  
-  { name: "Plasma Lord", rarity: "Rare", rate: 6, color: 0x9b59b6 },  
-  { name: "Giga Brute", rarity: "Rare", rate: 5, color: 0xd35400 },  
-  { name: "Quantum Ninja", rarity: "Epic", rate: 3, color: 0x34495e },  
-  { name: "Void Stalker", rarity: "Epic", rate: 2.5, color: 0x2c3e50 },  
-  { name: "Solar Titan", rarity: "Epic", rate: 2, color: 0xf39c12 },  
-  { name: "Lunar Spectre", rarity: "Epic", rate: 1.5, color: 0xbdc3c7 },  
-  { name: "Astral Monarch", rarity: "Legendary", rate: 0.8, color: 0xff7675 },  
-  { name: "Omega Destroyer", rarity: "Legendary", rate: 0.5, color: 0x6c5ce7 },  
-  { name: "Chronos God", rarity: "Legendary", rate: 0.3, color: 0x00cec9 },  
-  { name: "The Apex Prime", rarity: "Mythic", rate: 0.1, color: 0xfdcb6e }  
-];  
-  
-let targetMode = 'quick';  
-  
-function showScreen(screenId) {  
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));  
-  document.getElementById(screenId).classList.add('active');  
-  document.getElementById('hud').classList.remove('active');  
-  document.getElementById('mobileControls').style.display = 'none';  
-  if(renderer) { renderer.domElement.style.display = 'none'; }  
-}  
-  
-function openInputSelect(mode) {  
-  targetMode = mode;  
-  showScreen('inputSelectScreen');  
-}  
-  
-function updateCurrencyUI() {  
-  document.getElementById('coinCount').innerText = gameData.points;  
-  document.getElementById('playerLevel').innerText = gameData.level;  
-}  
-updateCurrencyUI();  
-  
-// --- LOCKER & SHOP LOGIC ---  
-function buildLocker() {  
-  const grid = document.getElementById('rosterGrid');  
-  grid.innerHTML = '';  
-  characters.forEach((char, index) => {  
-    let isUnlocked = gameData.unlocked.includes(index);  
-    let card = document.createElement('div');  
-    card.className = `item-card ${isUnlocked ? 'unlocked' : ''}`;  
-    card.innerHTML = `<strong style="color:#${char.color.toString(16)}">${char.name}</strong><br><small>${char.rarity}</small><br>Lvl ${gameData.levels[index]}`;  
-    card.onclick = () => {  
-      if(isUnlocked) {  
-        gameData.selectedChar = index;  
-        document.getElementById('selectedInfo').innerText = `Selected: ${char.name} (Lvl ${gameData.levels[index]})`;  
-      } else {  
-        alert("Fighter locked! Unlock via Character Summon.");  
-      }  
-    };  
-    grid.appendChild(card);  
-  });  
-}  
-buildLocker();  
-  
-function upgradeFighter() {  
-  if(gameData.points >= 150) {  
-    gameData.points -= 150;  
-    gameData.levels[gameData.selectedChar]++;  
-    gameData.level = Math.max(...gameData.levels);  
-    updateCurrencyUI();  
-    buildLocker();  
-    alert("Fighter upgraded successfully!");  
-  } else {  
-    alert("Not enough points! Earn points by playing matches.");  
-  }  
-}  
-  
-// --- GACHA SUMMON SYSTEM ---  
-function openGacha() { document.getElementById('gachaModal').style.display = 'flex'; }  
-function closeGacha() { document.getElementById('gachaModal').style.display = 'none'; }  
-  
-function rollGacha(count) {  
-  const cost = count * 100;  
-  if(gameData.points < cost) { alert("Not enough points!"); return; }  
-  gameData.points -= cost;  
-  updateCurrencyUI();  
-  
-  // Weighted random selection  
-  let totalRate = characters.reduce((sum, c) => sum + c.rate, 0);  
-  let rand = Math.random() * totalRate;  
-  let currentSum = 0;  
-  let rolledIndex = 0;  
-  for(let i=0; i<characters.length; i++) {  
-    currentSum += characters[i].rate;  
-    if(rand <= currentSum) { rolledIndex = i; break; }  
-  }  
-  
-  let char = characters[rolledIndex];  
-  let resDiv = document.getElementById('gachaResult');  
-    
-  if(gameData.unlocked.includes(rolledIndex)) {  
-    let refund = 50;  
-    gameData.points += refund;  
-    updateCurrencyUI();  
-    resDiv.innerHTML = `Duplicate! <span style="color:${char.color};">${char.name}</span> (${char.rarity})<br><small style="color:var(--gold);">Rolled double! Refunded +50 pts</small>`;  
-  } else {  
-    gameData.unlocked.push(rolledIndex);  
-    resDiv.innerHTML = `🎉 NEW UNLOCK! <br><span style="color:${char.color}; font-size:2rem;">${char.name}</span><br><small>${char.rarity}</small>`;  
-    buildLocker();  
-  }  
-}  
-  
-// --- SECURE ADMIN CODES SYSTEM ---  
-let userRole = 'user'; // 'user', 'friend', 'master'  
-function promptAdmin() {  
-  let code = prompt("Enter Admin Access Code:");  
-  if(code === "LandonUpdate2026") {  
-    userRole = 'master';  
-    document.getElementById('adminModal').style.display = 'block';  
-    document.getElementById('adminStatusText').innerText = "Logged in as MASTER ADMIN. You have full code update privileges & admin powers.";  
-    document.getElementById('codeEditorContainer').style.display = 'block';  
-    document.getElementById('liveCodeInput').value = document.documentElement.outerHTML;  
-  } else if(code === "ArenaFriend2026A" || code === "ArenaFriend2026B") {  
-    userRole = 'friend';  
-    document.getElementById('adminModal').style.display = 'block';  
-    document.getElementById('adminStatusText').innerText = "Logged in as FRIEND ADMIN. Admin abilities granted (Stat multipliers & Point boosts), code updates restricted.";  
-    document.getElementById('codeEditorContainer').style.display = 'none';  
-  } else {  
-    alert("Invalid Access Code.");  
-  }  
-}  
-function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }  
-function adminGivePoints() {  
-  gameData.points += 1000;  
-  updateCurrencyUI();  
-  alert("Granted +1000 admin points!");  
-}  
-function applyLiveUpdate() {  
-  if(userRole !== 'master') { alert("Unauthorized code update!"); return; }  
-  let newHtml = document.getElementById('liveCodeInput').value;  
-  document.open();  
-  document.write(newHtml);  
-  document.close();  
-  alert("Code updated live successfully!");  
-}  
-  
-// --- 3D ENGINE & GAMEPLAY ---  
-let scene, camera, renderer, playerMesh, enemyMesh;  
-let pHP = 100, cHP = 100;  
-let keys = {};  
-let pvy = 0, isJumping = false;  
-let gameActive = false;  
-  
-function launchGame(mode) {  
-  gameData.controlMode = mode;  
-  showScreen('');  
-  document.getElementById('hud').classList.add('active');  
-  if(mode === 'mobile') {  
-    document.getElementById('mobileControls').style.display = 'flex';  
-  }  
-  init3DWorld();  
-}  
-  
-function returnToMenu() {  
-  gameActive = false;  
-  if(renderer) renderer.domElement.style.display = 'none';  
-  showScreen('modeScreen');  
-  updateCurrencyUI();  
-}  
-  
-function setKey(code, val) { keys[code] = val; }  
-window.addEventListener('keydown', e => keys[e.code] = true);  
-window.addEventListener('keyup', e => keys[e.code] = false);  
-  
-function triggerJump() {  
-  if(!isJumping) { pvy = 0.22; isJumping = true; }  
-}  
-function triggerAttack() {  
-  if(playerMesh) {  
-    playerMesh.scale.set(1.3, 0.7, 1.3);  
-    setTimeout(() => playerMesh.scale.set(1,1,1), 150);  
-    if(Math.abs(playerMesh.position.x - enemyMesh.position.x) < 2.5) {  
-      let dmg = 15 + (gameData.levels[gameData.selectedChar] * 3);  
-      if(userRole !== 'user') dmg *= 2; // Admin power boost!  
-      cHP -= dmg;  
-    }  
-  }  
-}  
-  
-function init3DWorld() {  
-  if(!renderer) {  
-    scene = new THREE.Scene();  
-    scene.background = new THREE.Color(0x090a0f);  
-    scene.fog = new THREE.FogExp2(0x090a0f, 0.035);  
-  
-    camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);  
-    camera.position.set(0, 5, 10);  
-    camera.lookAt(0, 0, 0);  
-  
-    renderer = new THREE.WebGLRenderer({ antialias: true });  
-    renderer.setSize(window.innerWidth, window.innerHeight);  
-    renderer.shadowMap.enabled = true;  
-    document.body.appendChild(renderer.domElement);  
-  
-    // Lighting  
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));  
-    let dirLight = new THREE.DirectionalLight(0xffffff, 0.9);  
-    dirLight.position.set(10, 20, 10);  
-    dirLight.castShadow = true;  
-    scene.add(dirLight);  
-  }  
-  
-  renderer.domElement.style.display = 'block';  
-  
-  // Clear old objects if any  
-  scene.children = scene.children.filter(obj => obj.isLight);  
-  
-  // Re-add lights  
-  scene.add(new THREE.AmbientLight(0xffffff, 0.6));  
-  let dirLight = new THREE.DirectionalLight(0xffffff, 0.9);  
-  dirLight.position.set(10, 20, 10);  
-  scene.add(dirLight);  
-  
-  // Map: Mainly Flat Ground  
-  let groundGeo = new THREE.BoxGeometry(60, 1, 60);  
-  let groundMat = new THREE.MeshStandardMaterial({ color: 0x1e272e, roughness: 0.8 });  
-  let ground = new THREE.Mesh(groundGeo, groundMat);  
-  ground.position.y = -0.5;  
-  scene.add(ground);  
-  
-  // Add Trees and Boulders across the flat map  
-  let boulderGeo = new THREE.DodecahedronGeometry(1.2);  
-  let boulderMat = new THREE.MeshStandardMaterial({ color: 0x576574 });  
-  for(let i=0; i<12; i++) {  
-    let boulder = new THREE.Mesh(boulderGeo, boulderMat);  
-    boulder.position.set((Math.random()-0.5)*40, 0.6, (Math.random()-0.5)*40);  
-    scene.add(boulder);  
-  }  
-  
-  let trunkGeo = new THREE.CylinderGeometry(0.4, 0.6, 3);  
-  let trunkMat = new THREE.MeshStandardMaterial({ color: 0x8e44ad });  
-  let leavesGeo = new THREE.SphereGeometry(1.5);  
-  let leavesMat = new THREE.MeshStandardMaterial({ color: 0x2ed573 });  
-  for(let i=0; i<8; i++) {  
-    let x = (Math.random()-0.5)*45, z = (Math.random()-0.5)*45;  
-    if(Math.abs(x) > 5 || Math.abs(z) > 5) {  
-      let trunk = new THREE.Mesh(trunkGeo, trunkMat);  
-      trunk.position.set(x, 1.5, z);  
-      let leaves = new THREE.Mesh(leavesGeo, leavesMat);  
-      leaves.position.set(x, 3.2, z);  
-      scene.add(trunk, leaves);  
-    }  
-  }  
-  
-  // Player Character Mesh  
-  let charColor = characters[gameData.selectedChar].color;  
-  let pGeo = new THREE.BoxGeometry(1.2, 2.2, 1.2);  
-  let pMat = new THREE.MeshStandardMaterial({ color: charColor, roughness: 0.2 });  
-  playerMesh = new THREE.Mesh(pGeo, pMat);  
-  playerMesh.position.set(-3, 1.1, 0);  
-  scene.add(playerMesh);  
-  
-  // Enemy / Bot Mesh  
-  let cGeo = new THREE.BoxGeometry(1.2, 2.2, 1.2);  
-  let cMat = new THREE.MeshStandardMaterial({ color: 0xff4757, roughness: 0.2 });  
-  enemyMesh = new THREE.Mesh(cGeo, cMat);  
-  enemyMesh.position.set(3, 1.1, 0);  
-  scene.add(enemyMesh);  
-  
-  pHP = 100; cHP = 100;  
-  gameActive = true;  
-  animateGame();  
-}  
-  
-function animateGame() {  
-  if(!gameActive) return;  
-  requestAnimationFrame(animateGame);  
-  
-  // Keyboard Movement Inputs  
-  if(gameData.controlMode === 'pc') {  
-    if(keys['ArrowLeft'] || keys['KeyA']) playerMesh.position.x -= 0.12;  
-    if(keys['ArrowRight'] || keys['KeyD']) playerMesh.position.x += 0.12;  
-    if(keys['Space'] && !isJumping) triggerJump();  
-    if(keys['KeyJ']) triggerAttack();  
-  }  
-  
-  // Mobile movement loop check  
-  if(keys['ArrowLeft']) playerMesh.position.x -= 0.12;  
-  if(keys['ArrowRight']) playerMesh.position.x += 0.12;  
-  
-  // Jump physics  
-  if(isJumping) {  
-    playerMesh.position.y += pvy;  
-    pvy -= 0.015;  
-    if(playerMesh.position.y <= 1.1) {  
-      playerMesh.position.y = 1.1;  
-      isJumping = false;  
-      pvy = 0;  
-    }  
-  }  
-  
-  // AI Bot Tracking  
-  let distToPlayer = playerMesh.position.x - enemyMesh.position.x;  
-  if(Math.abs(distToPlayer) > 1.8) {  
-    enemyMesh.position.x += Math.sign(distToPlayer) * 0.045;  
-  } else {  
-    if(Math.random() < 0.03) {  
-      pHP -= 1;  
-    }  
-  }  
-  enemyMesh.rotation.y += 0.02;  
-  
-  // Update HUD HP  
-  document.getElementById('pHealth').innerText = Math.max(0, Math.round(pHP));  
-  document.getElementById('cHealth').innerText = Math.max(0, Math.round(cHP));  
-  
-  if(pHP <= 0) {  
-    alert("Match Over! You were defeated.");  
-    returnToMenu();  
-  } else if(cHP <= 0) {  
-    let reward = targetMode === 'quick' ? 100 : 250;  
-    gameData.points += reward;  
-    alert(`Victory! You earned +${reward} points.`);  
-    returnToMenu();  
-  }  
-  
-  renderer.render(scene, camera);  
-}  
-</script>  
-  
-</body>  
-</html>  
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>PolyClash Arena 3D</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+</head><body>
+<header class="top"><button class="sb" data-go="menuScreen">HOME</button><b class="brand">POLYCLASH <i>ARENA</i></b><div class="acct"><span id="who"></span><span id="coins"></span></div></header>
+<main>
+<section id="homeScreen" class="screen on"><div class="card"><h1>POLYCLASH <i>ARENA</i></h1>
+<p class="mu">3D arena fighter. No email needed.</p>
+<input id="uIn" maxlength="16" placeholder="Username" autocomplete="username"><input id="pIn" type="password" placeholder="Password" autocomplete="current-password">
+<div class="row"><button id="inBtn" class="btn">LOG IN</button><button id="upBtn2" class="btn gold">CREATE ACCOUNT</button></div>
+<button id="guestBtn" class="btn red wide">PLAY AS GUEST</button><p id="authMsg" class="st"></p><p id="modeNote" class="tiny"></p></div></section>
+
+<section id="menuScreen" class="screen"><div class="card menu"><div class="hero"><canvas id="heroCv"></canvas><div class="heroTxt"><b id="heroName"></b><small id="heroSub"></small></div></div><h1>POLYCLASH <i>ARENA</i></h1><p id="stats" class="mu"></p><p id="news" class="st"></p>
+<div class="grid2"><button class="btn red" data-go="grindScreen">GRIND ARENA</button><button class="btn red" data-go="onlineScreen">ONLINE</button><button id="myArena" class="btn purple">MY ARENA</button>
+<button class="btn gold" data-go="shopScreen">BAG SHOP</button><button class="btn" data-go="lockerScreen">LOCKER</button>
+<button class="btn" data-go="boardScreen">LEADERBOARD</button><button class="btn" data-go="guideScreen">POWER GUIDE</button><button id="adminBtn" class="btn hide" data-go="adminScreen">ADMIN</button></div>
+<button id="outBtn" class="lnk">Log out</button></div></section>
+
+<section id="grindScreen" class="screen"><div class="card"><h2>GRIND ARENA</h2><p class="mu">Endless bots. Higher level = more coins.</p><div id="lvlGrid" class="grid2"></div><button class="btn" data-go="menuScreen">BACK</button></div></section>
+
+<section id="onlineScreen" class="screen"><div class="card"><h2>ONLINE</h2>
+<button id="pubBtn" class="btn red wide">JOIN PUBLIC SERVER</button><div class="div"></div>
+<button id="mkBtn" class="btn gold wide">CREATE PRIVATE PARTY</button>
+<input id="codeIn" maxlength="6" placeholder="Party code"><button id="joinBtn" class="btn wide">JOIN PARTY</button>
+<p id="onMsg" class="st"></p><button class="btn" data-go="menuScreen">BACK</button></div></section>
+
+<section id="shopScreen" class="screen"><div class="card big"><h2>BAG SHOP</h2><p class="mu">Better bags = better odds. Characters and weapons.</p>
+<div id="bagGrid" class="bags"></div><div id="shopRes" class="res">Pick a bag</div><button class="btn" data-go="menuScreen">BACK</button></div></section>
+
+<section id="lockerScreen" class="screen"><div class="card big"><h2>LOCKER</h2><p id="lockInfo" class="mu"></p>
+<div class="row"><button id="tabC" class="btn">CHARACTERS</button><button id="tabW" class="btn">WEAPONS</button><button id="tabS" class="btn">SKINS</button></div>
+<div id="lockGrid" class="cards"></div><button id="upBtn" class="btn gold">UPGRADE</button><button class="btn" data-go="menuScreen">BACK</button></div></section>
+
+<section id="boardScreen" class="screen"><div class="card big"><h2>LEADERBOARD</h2><div id="boardTabs" class="row"></div><div id="boardList" class="list"></div><button class="btn" data-go="menuScreen">BACK</button></div></section>
+
+<section id="guideScreen" class="screen"><div class="card big"><h2>POWER GUIDE</h2><div id="guideList" class="list"></div><button class="btn" data-go="menuScreen">BACK</button></div></section>
+
+<section id="adminScreen" class="screen"><div class="card big adm"><div class="admTop"><h2>ADMIN PANEL</h2><button id="admClose" class="btn">BACK</button></div>
+<div class="admTabs"><button data-at="me" class="on">MY POWERS</button><button data-at="pl">PLAYERS</button><button data-at="live" id="liveTab">LIVE UPDATES</button><button data-at="log">ACTION LOG</button></div>
+<div id="at_me" class="atab on">
+<div id="insaneBox" class="hide"><div class="insane"><div><b>SUPER INSANE MODE</b><small>Huge damage, key 5 ultimate combo, map destruction. Only works in Grind, My Arena and private parties you host.</small></div><button id="insaneTg" class="tg">OFF</button></div></div>
+<div id="pwBox"></div>
+<div id="selfCoin" class="row hide"><input id="selfAmt" type="number" value="1000"><button id="selfCoinBtn" class="btn gold">GIVE MYSELF COINS</button></div>
+<button id="selfUnlock" class="btn hide">UNLOCK EVERYTHING (ME)</button>
+</div>
+<div id="at_pl" class="atab">
+<div class="row"><input id="psearch" placeholder="Search username"><button id="plRef" class="btn">SEARCH</button></div>
+<div id="plist" class="list plist"></div>
+<div id="insp"></div>
+</div>
+<div id="at_live" class="atab">
+<p class="mu">Changes the game for everyone, no code needed.</p>
+<input id="cfgNews" placeholder="Announcement shown on the menu">
+<div class="row"><label class="lab">Coins x<input id="cfgCoin" type="number" step="0.1"></label><label class="lab">Bag price x<input id="cfgBag" type="number" step="0.1"></label><label class="lab">Bot HP x<input id="cfgBot" type="number" step="0.1"></label></div>
+<button id="cfgSave" class="btn gold wide">SAVE LIVE SETTINGS</button>
+</div>
+<div id="at_log" class="atab"><button id="logRef" class="btn">REFRESH</button><div id="logList" class="list"></div></div>
+</div></section>
+</main>
+
+<div id="gameUI" class="hide">
+<canvas id="fxc"></canvas>
+<div class="gbar"><button id="gHome" class="gb">&#8962; HOME</button><button id="gAdmin" class="gb adm hide">&#9881; ADMIN</button><span id="insB" class="insb hide">SUPER INSANE</span></div>
+<div class="hud"><div class="hname"><b id="hudName"></b><span id="arena"></span></div>
+<div class="bar"><div id="hpB" class="f hp"></div><span id="hpT"></span></div>
+<div class="bar aw"><div id="awB" class="f awk"></div><span id="awT">AWAKENING</span></div>
+<div id="evB" class="evb">EVASIVE READY</div></div>
+<div id="tgt" class="tgt hide"><b id="tgtN"></b><div class="bar sm"><div id="tgtB" class="f hp"></div></div></div>
+<div id="combo" class="combo"></div><div id="banner" class="banner"></div><div id="feed"></div>
+<div id="grabHint" class="grabh hide"></div>
+<div id="extP" class="extp"><b>&#8679; JUMP TO EXTEND</b><div class="extbar"><div id="extF"></div></div></div>
+<div id="airP" class="airp"></div>
+<div id="train" class="train hide"><div class="trh">TRAINING <small id="tCount"></small></div><div class="trow"><button id="tLvlDn" class="tbn">&#8722;</button><b id="tLvl">Lv 3</b><button id="tLvlUp" class="tbn">+</button></div><button id="tSpawn" class="tbn wide">SPAWN BOT</button><div class="trow"><button id="tAuto" class="tbn">AUTO: ON</button><button id="tClear" class="tbn">CLEAR</button></div></div>
+<div id="moves" class="moves"></div>
+<div id="hint" class="hint">WASD move · Click to lock mouse · Shift sprint · Space jump (Space at a wall = wall jump) · Click/J punch (4 = knockback) · hold Space + 4th = uppercut, then Space = air extend · 3 air hits + click = slam · Q dash (+click = dash punch) · F block (tap = parry) · Q when hit = evasive · E grab/throw · 1-4 moves · G awaken · R finisher</div>
+<button id="leaveBtn" class="leave">LEAVE</button>
+<div id="touch" class="hide"><div id="camPad"></div><div id="joy"><div id="knob"></div></div>
+<div class="tbs"><button class="tb" data-a="grab">GRAB</button><button class="tb" data-a="blk">BLOCK</button><button class="tb" data-a="aw">AWAKEN</button>
+<button class="tb" data-a="dash">DASH</button><button class="tb" data-a="jump">JUMP</button><button class="tb atk" data-a="m1">PUNCH</button></div></div>
+</div>
+<div id="toast"></div>
+<script src="js/config.js"></script><script src="js/characters.js"></script><script src="js/backend.js"></script><script src="js/rig.js"></script><script src="js/fx.js"></script><script src="js/world.js"></script><script src="js/kits.js"></script><script src="js/thumbs.js"></script><script src="js/game.js"></script><script src="js/app.js"></script>
+</body></html>

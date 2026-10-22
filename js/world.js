@@ -108,6 +108,7 @@ function sidewalkProps(bx,bz){
   if(i<4)addProp("lamp",x,z,ry+Math.PI/2);else addProp(r<.35?"trash":r<.6?"bench":r<.72?"hydrant":r<.85?"mailbox":"crate",x,z,ry)});
 }
 // ---------- collision ----------
+function roofHeight(x,z){let h=0;for(const b of B){if(x>b.x0+.7&&x<b.x1-.7&&z>b.z0+.7&&z<b.z1-.7)h=Math.max(h,b.h)}return h}
 function resolve(f,rad){// push a fighter out of buildings + solid props; returns hit info
  let hit=null;rad=rad||.9;
  for(const b of B){if(f.y>b.h)continue;
@@ -159,5 +160,5 @@ function update(dt,focus){
  }
 }
 function nearestProp(x,z,r,throwable){let b=null,bd=r;for(const p of props){if(!p.alive||p.held||p.fly)continue;if(throwable&&!p.def.throw)continue;const d=Math.hypot(p.x-x,p.z-z)-p.def.r*.5;if(d<bd){bd=d;b=p}}return b}
-window.World={build,update,smash,smashNear,resolve,camClip,blocked,breakProp,damageProps,crater,wallCrater,spawnDebris,nearestProp,props,B,HALF};
+window.World={build,update,smash,smashNear,resolve,roofHeight,camClip,blocked,breakProp,damageProps,crater,wallCrater,spawnDebris,nearestProp,props,B,HALF};
 })();

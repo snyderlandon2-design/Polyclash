@@ -37,7 +37,7 @@ function render(kind,id,extra){setup();
  for(let i=scene.children.length-1;i>=0;i--){const o=scene.children[i];if(o.userData.subj)scene.remove(o)}
  let subj,cy=0,dist=6;
  if(kind==="c"||kind==="s"){const d=DT(),c=d.CH[id]||d.CH[0],col=kind==="s"?(d.SKINS[extra]&&d.SKINS[extra][1]!=null?d.SKINS[extra][1]:c.col):c.col;
-  const look=Rig.lookFor(id,col);const rig=Rig.build(look,0xffd54a);const f={rig,look,ph:0,anState:"idle",vy:0,vx:0,vz:0};for(let s=0;s<12;s++)Rig.update(f,.016,s*.016);subj=rig.g;subj.rotation.y=.45;
+  const look=Rig.lookFor(id,col,kind==="s"?extra:0);const rig=Rig.build(look,0xffd54a);const f={rig,look,ph:0,anState:"idle",vy:0,vx:0,vz:0};for(let s=0;s<12;s++)Rig.update(f,.016,s*.016);subj=rig.g;subj.rotation.y=.45;
   if(kind==="c"){cy=4.6;dist=7.2}else{cy=3;dist=12.5}}
  else if(kind==="w"){subj=weapon(DT().WP[id]||DT().WP[0]);cy=1.2;dist=7.5}
  else if(kind==="b"){subj=bag(id);cy=.1;dist=6}

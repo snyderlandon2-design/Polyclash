@@ -457,7 +457,7 @@ function frame(rdt,draw){
  if(draw)ren.render(scene,cam)}
 // ---------- input ----------
 const isTyping=e=>e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA");
-addEventListener("keydown",e=>{if(!on||isTyping(e))return;if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Tab"].indexOf(e.code)>=0)e.preventDefault();if(e.repeat)return;const c=e.code;if(c==="MetaLeft"||c==="MetaRight"){shiftLock=!shiftLock;if(window.App&&App.toast)App.toast(shiftLock?"SHIFT LOCK ON":"SHIFT LOCK OFF");return}keys[e.code]=1;
+addEventListener("keydown",e=>{if(!on||isTyping(e))return;if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Tab"].indexOf(e.code)>=0)e.preventDefault();if(e.repeat)return;const c=e.code;if(c==="MetaLeft"||c==="MetaRight"){shiftLock=!shiftLock;if(shiftLock){const canvas=ren?.domElement;if(canvas?.requestPointerLock)canvas.requestPointerLock().catch?.(()=>{});}else if(document.pointerLockElement)document.exitPointerLock();if(window.App&&App.toast)App.toast(shiftLock?"SHIFT LOCK ON":"SHIFT LOCK OFF");return}keys[e.code]=1;
  if(c==="Space"){jumpHeld=true;if(!adminFly&&!adminObserve)jump(me)}
  else if(c==="Digit1"||c==="Numpad1")useMove(me,0);else if(c==="Digit2"||c==="Numpad2")useMove(me,1);else if(c==="Digit3"||c==="Numpad3")useMove(me,2);else if(c==="Digit4"||c==="Numpad4")useMove(me,3);else if(c==="Digit5"||c==="Numpad5")ultimate();else if(c==="Digit6"||c==="Numpad6")weaponMove(me);
  else if(c==="KeyQ")dash(me,me.inDir?me.inDir[0]:0,me.inDir?me.inDir[1]:0);else if(c==="KeyG")awaken(me);else if(c==="KeyR")finisher(me);

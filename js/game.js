@@ -216,7 +216,7 @@ function jump(f){if(f.dead)return;
  f.vy=(f.carry?18:25)*(f.isMe&&insaneActive()?1.35:1);FX.dust(f.x,.2,f.z,3)}
 // ---------- per-fighter update ----------
 function physics(f,dt){
- if(f.isMe&&(adminFly||adminObserve)){f.x+=f.vx*dt;f.z+=f.vz*dt;f.y=Math.max(0,f.y+f.vy*dt);f.floorY=0;f.air=true;f.rig.g.position.set(f.x,f.y,f.z);return}
+ if(f.isMe&&(adminFly||adminObserve)){f.st="free";f.lock=0;f.root=null;f.dashT=0;f.x+=f.vx*dt;f.z+=f.vz*dt;f.y=Math.max(0,f.y+f.vy*dt);f.floorY=0;f.air=true;f.rig.g.position.set(f.x,f.y,f.z);return}
 
  const oldY=f.y;
  const wasAir=!grounded(f);
@@ -399,7 +399,7 @@ function start(o){
  document.body.appendChild(ren.domElement);
  Rig.setQuality(low);World.build(scene,{low});FX.init(scene,cam,$("fxc"),low);if(low){cam.far=320;cam.updateProjectionMatrix();scene.fog.near=60;scene.fog.far=240}
  const S=statsFor(pf),sk=DT.SKINS[pf.skin||0];
- me=makeFighter({name:pf.username,charId:pf.char,col:sk&&sk[1]!=null?sk[1]:S.c.col,glow:S.w.col,kit:S.kit,skinId:pf.skin||0,isMe:true});me.tag.s.visible=false;me.title=pf.title||"";me.S=S;me.hp=me.mhp=S.mhp;const sp=spawnPoint();me.x=sp[0];me.z=sp[1];me.ctrl=true;drawTag(me);
+ me=makeFighter({name:pf.username,charId:pf.char,col:sk&&sk[1]!=null?sk[1]:S.c.col,glow:S.w.col,kit:S.kit,skinId:pf.skin||0,isMe:true});me.tag.s.visible=false;if(pf.role==="mega"&&pf.on){adminFly=!!pf.on.fly;adminObserve=!!pf.on.observe;if(adminObserve)adminFly=true;if(adminObserve)me.rig.g.traverse(o=>{if(o.isMesh&&o.material){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){m.transparent=true;m.opacity=.42}}})}me.title=pf.title||"";me.S=S;me.hp=me.mhp=S.mhp;const sp=spawnPoint();me.x=sp[0];me.z=sp[1];me.ctrl=true;drawTag(me);
  if(mode==="online"||mode==="duel"){ch=window.Backend.join(o.room,{id:myId,name:pf.username},{state:onState,hit:onHit,leave:onLeave});
   if(ch)label=o.room.indexOf("p-")===0?"PARTY "+o.room.slice(2).toUpperCase():"PUBLIC SERVER";
   else{window.App.toast("Online needs the free Supabase setup. Starting offline practice.");mode="grind";lvl=3;label="OFFLINE PRACTICE"}}
@@ -485,6 +485,6 @@ cp.addEventListener("touchmove",e=>{if(!lt)return;for(const t of e.changedTouche
 cp.addEventListener("touchend",()=>{lt=null});
 function refresh(){if(!on)return;buildMoves();$("train").classList.toggle("hide",!canTrain())}
 function trainSpawn(){if(!canTrain()||!on)return;if(bots.filter(alive).length>=8){window.App.toast("Max 8 bots at once");return}spawnBot(training.lvl)}
-function adminMode(type,enabled){if(!on||!pf||pf.role!=="mega")return false;if(type==="fly")adminFly=!!enabled;else if(type==="observe"){adminObserve=!!enabled;if(adminObserve)adminFly=true;me.rig.g.traverse(o=>{if(o.isMesh&&o.material){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){m.transparent=true;m.opacity=adminObserve?.42:1}}});}else return false;return true}
+function adminMode(type,enabled){if(!on||!pf||pf.role!=="mega")return false;if(type==="fly"){adminFly=!!enabled;if(!adminFly&&adminObserve)adminObserve=false;}else if(type==="observe"){adminObserve=!!enabled;if(adminObserve)adminFly=true;me.rig.g.traverse(o=>{if(o.isMesh&&o.material){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){m.transparent=true;m.opacity=adminObserve?.42:1}}});}else return false;return true}
 return{start,stop,refresh,adminMode,get active(){return on},_debug:()=>({me,bots,World,K,useMove,m1,dash,awaken,finisher,pickup,throwProp,keys,setJump:v=>{jumpHeld=v},onState,onHit,rem,info:()=>{let m=0;scene.traverse(o=>{if(o.isMesh)m++});return{meshes:m,calls:ren.info.render.calls,tris:ren.info.render.triangles}},step:(n,d)=>{for(let i=0;i<n;i++)frame(d||1/60,false)},setYaw:v=>{yaw=v},joy,extend,ultimate,training,trainSpawn,insaneActive,wallJump,setMode:v=>{mode=v}})};
 })();

@@ -62,7 +62,20 @@ function aiSetup(){
    Emotes:["Wave","Cheer","Dance","Bow","Victory Pose"].map((name,id)=>({id,name}))
   };
   const clean=x=>String(x).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
-  const query=clean(message),mentioned=Object.entries(categories).flatMap(([category,items])=>items.filter(x=>query.includes(clean(x.name))&&clean(x.name).length>2).map(x=>({...x,category})));
+  const distance=(a,b)=>{const row=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){let prev=row[0];row[0]=i;for(let j=1;j<=b.length;j++){const before=row[j];row[j]=Math.min(row[j]+1,row[j-1]+1,prev+(a[i-1]===b[j-1]?0:1));prev=before}}return row[b.length]};
+  const query=clean(message),words=query.split(" "),matches=[];
+  for(const [category,items] of Object.entries(categories))for(const item of items){
+   const name=clean(item.name),parts=name.split(" "),len=parts.length;
+   if(!name||name.length<3)continue;
+   for(let i=0;i<=words.length-len;i++){
+    const phrase=words.slice(i,i+len).join(" "),d=distance(phrase,name),allowed=name.length<5?1:name.length<10?2:Math.min(4,Math.floor(name.length*.27));
+    if(d<=allowed)matches.push({...item,category,at:i,score:d/name.length});
+   }
+  }
+  matches.sort((a,b)=>a.at-b.at||a.score-b.score);
+  const mentioned=[];
+  for(const match of matches){if(mentioned.some(x=>Math.abs(x.at-match.at)<2))continue;mentioned.push(match)}
+  const uncertain=mentioned.some(m=>matches.some(n=>n.at===m.at&&n.category===m.category&&n.id!==m.id&&Math.abs(n.score-m.score)<.11));
   const cat=Object.keys(categories).find(c=>new RegExp("\\b"+c.toLowerCase().replace(/s$/,"")+"s?\\b").test(query));
   const priceMatch=message.match(/(?:for|cost|price|at|to)\s*\$?([\d,]+)\s*(?:coins?)?\b/i);
   const price=priceMatch?Number(priceMatch[1].replaceAll(",","")):null;
@@ -70,12 +83,12 @@ function aiSetup(){
   const wordSlots={first:0,second:1,third:2,fourth:3,fifth:4};
   let slot=slotMatch?(Number.isInteger(Number(slotMatch[1]))?Number(slotMatch[1])-1:wordSlots[slotMatch[1].toLowerCase()]):null;
   const listed=serverSlots||[];
-  if(!/(shop|item|replace|swap|change|put|feature|stock|sell|price|cost|slot|remove|add)/i.test(message))return "I only manage the item shop. Tell me naturally what item to change, where to put it, or what it should cost.";
+  if(!/(shop|item|replace|replase|swap|swop|switch|change|put|feature|stock|sell|price|cost|slot|remove|add)/i.test(message))return "I only manage the item shop. Tell me naturally what item to change, where to put it, or what it should cost.";
   const target=mentioned.length===1?mentioned[0]:mentioned.length>1?mentioned[mentioned.length-1]:null;
   const old=mentioned.length>1?mentioned[0]:null;
   const category=cat||target?.category||old?.category;
   if(!category)return "Which shop category should I change: characters, skins, moves, weapons, or emotes?";
-  if(mentioned.length>2)return "I found several item names. Which item should be featured?";
+  if(mentioned.length>2||uncertain)return "I found multiple possible item matches. Can you tell me which exact items you mean? Nothing changed.";
   if(old&&target&&old.category!==target.category)return "Those items are from different categories. Which category should I edit?";
   if(slot===null&&old){const current=listed.filter(x=>x.category===category&&x.item_id===old.id);if(current.length===1)slot=current[0].slot}
   if(slot===null&&target&&/price|cost/i.test(message)){const current=listed.filter(x=>x.category===category&&x.item_id===target.id);if(current.length===1)slot=current[0].slot}

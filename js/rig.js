@@ -89,14 +89,55 @@ function faceTex(look,ex){// ex: 0 normal, 1 angry/attacking, 2 hurt
  const t=new (T().CanvasTexture)(c);t.anisotropy=4;
  return faces[k]=new (T().MeshStandardMaterial)({map:t,transparent:true,roughness:.7,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2})}
 // ---------- looks ----------
-function lookFor(id,shirt){
+function lookFor(id,shirt,skinId){
  const ov=window.DATA&&DATA.CH[id]&&DATA.CH[id].arch;const a=ov!==undefined&&ov!==null?ov:Math.floor(id/20)%20;let s=(id*2654435761>>>0)||1;const r=()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return(s>>>0)/4294967296};
  const pants=[0x1c1c22,0x2a2f45,0x3b2a20,0x202a20,0x111111,0x4a4a52][Math.floor(r()*6)];
- return{id,arch:a,style:STYLE[a],shirt:shirt,accent:mixc(shirt,r()<.5?0xffffff:0x000000,.45),pants,skin:SKIN[Math.floor(r()*SKIN.length)],hair:HAIR[Math.floor(r()*HAIR.length)],eye:EYES[Math.floor(r()*EYES.length)],shoe:[0xf2f2f2,0x1a1a1a,0xc62828,0x1565c0,0xd8ad3d][Math.floor(r()*5)]}
+ const theme=skinId===undefined?0:skinId;return{id,arch:a,style:STYLE[a],skinTheme:theme,r6:true,shirt:shirt,accent:mixc(shirt,theme%2?0xffffff:0x000000,.42),pants:theme===0?0x999fa8:pants,skin:theme===0?0xaaaaaa:SKIN[Math.floor(r()*SKIN.length)],hair:HAIR[Math.floor(r()*HAIR.length)],eye:EYES[Math.floor(r()*EYES.length)],shoe:theme===0?0x777e88:[0xf2f2f2,0x1a1a1a,0xc62828,0x1565c0,0xd8ad3d][Math.floor(r()*5)]}
 }
 // ---------- body ----------
 const METAL=0xb9bec8,DMETAL=0x6d727c,LEATHER=0x5a3a22,WHITE=0xf3f3f3,BLACK=0x161618,GOLD=0xd8ad3d;
-function build(look,glow){
+// R6-inspired six-part avatar silhouette based on the CC-BY reference by mrduckys.
+// This is an original compatible mesh, not a downloaded Sketchfab file.
+function buildR6(look,glow){
+ const g=new (T().Group)(),root=piv(0,0,0,g),hips=piv(0,2.03,0,root),torso=piv(0,.25,0,hips);
+ const theme=look.skinTheme||0,st=look.style,shirt=look.shirt,accent=look.accent;
+ const mat=(color,metal=0)=>new (T().MeshStandardMaterial)({color,roughness:metal?.34:.73,metalness:metal});
+ const box=(parent,w,h,d,color,x,y,z,metal=0)=>{const m=new (T().Mesh)(new (T().BoxGeometry)(w,h,d),mat(color,metal));m.position.set(x||0,y||0,z||0);m.castShadow=true;parent.add(m);return m};
+ const leg=(side)=>{const hp=piv(side*.48,-.22,0,hips),kn=piv(0,-.8,0,hp);
+  box(hp,.86,1.5,.87,look.pants,0,-.75,0);
+  box(kn,.9,.15,.96,look.shoe,0,-.73,.06);
+  if(theme===5||theme===7)box(hp,.9,.13,.9,accent,0,-.15,0,.5);
+  return{hp,kn}};
+ box(hips,1.8,.43,.94,look.pants,0,0,0);
+ const chest=box(torso,1.95,1.75,.98,shirt,0,.75,0);
+ if(theme===1||theme===8||theme===10){box(torso,1.99,.19,1.02,accent,0,1.36,0);box(torso,.19,1.45,1.03,accent,0,.76,0)}
+ if(theme===2||theme===6||theme===11){box(torso,1.25,.55,.06,accent,0,1.03,.52,.25);box(torso,.42,.4,.09,look.shoe,0,.54,.53)}
+ if(theme===3||theme===9){for(let j=0;j<3;j++)box(torso,1.4,.09,.08,accent,0,.5+j*.36,.52,.4)}
+ if(theme===4){box(torso,2.08,.22,1.04,accent,0,1.55,0,.5)}
+ const arm=(side)=>{const sp=piv(side*1.37,1.43,0,torso),el=piv(0,-.85,0,sp);
+  box(sp,.84,1.72,.87,theme===0?shirt:look.skin,0,-.86,0);
+  if(theme>0){box(sp,.88,.72,.91,shirt,0,-.37,0);if(theme===3||theme===5||theme===8)box(sp,.9,.14,.94,accent,0,-.72,0,.5)}
+  return{sp,el}};
+ const L=arm(-1),R=arm(1),LL=leg(-1),RL=leg(1);
+ const neck=piv(0,1.71,0,torso),head=piv(0,.61,0,neck);
+ const headColor=theme===0?look.skin:look.skin;
+ const hm=new (T().Mesh)(rbox(1.06,1.06,1.06,.19),mat(headColor));head.add(hm);hm.castShadow=true;
+ const fc=document.createElement("canvas");fc.width=fc.height=128;const ctx=fc.getContext("2d");
+ ctx.strokeStyle="#171717";ctx.fillStyle="#171717";ctx.lineWidth=6;ctx.lineCap="round";
+ ctx.beginPath();ctx.ellipse(43,47,3.3,8,0,0,Math.PI*2);ctx.ellipse(84,47,3.3,8,0,0,Math.PI*2);ctx.fill();
+ ctx.beginPath();ctx.arc(64,63,27,.15,Math.PI-.15);ctx.stroke();
+ const fm=new (T().Mesh)(new (T().PlaneGeometry)(.89,.89),new (T().MeshBasicMaterial)({map:new (T().CanvasTexture)(fc),transparent:true,depthWrite:false,side:T().DoubleSide}));fm.position.z=.544;head.add(fm);
+ // Unique skins change outfit silhouette, not just tint.
+ if(theme===1||theme===9){box(head,1.14,.22,1.13,look.hair,0,.54,0);box(head,1.19,.09,.58,look.hair,0,.4,.65)}
+ if(theme===2||theme===10){const horn=new (T().Mesh)(new (T().ConeGeometry)(.2,.55,5),mat(accent,.4));horn.position.set(-.36,.76,0);head.add(horn);const horn2=horn.clone();horn2.position.x=.36;head.add(horn2)}
+ if(theme===3||theme===11){box(head,1.18,.28,1.15,accent,0,.52,0,.55);box(head,1.22,.13,.2,accent,0,.33,.53,.55)}
+ if(theme===4||theme===6){box(torso,2.25,.3,1.18,accent,0,1.56,0,.45);box(head,1.18,.23,1.17,accent,0,.54,0,.45)}
+ if(theme===5||theme===7){box(torso,1.5,.11,.09,accent,0,1.25,.53,.4);box(head,.19,.18,1.2,accent,0,.45,0,.5)}
+ if(theme===8){box(torso,2.13,.18,1.1,accent,0,.16,0);box(head,1.2,.16,1.2,look.hair,0,.52,0)}
+ const fg=side=>{const m=new (T().Mesh)(new (T().BoxGeometry)(.86,.85,.9),new (T().MeshStandardMaterial)({color:glow||0xffffff,emissive:glow||0xffffff,emissiveIntensity:.8,transparent:true,opacity:.75}));m.position.y=-.85;m.visible=false;side.el.add(m);return m};
+ return{g,root,hips,torso,neck,head,L,R,LL,RL,glow:[fg(L),fg(R)],cur:{},look,chest,face:null,sway:[],ex:0};
+}
+function build(look,glow){\n if(look.r6!==false)return buildR6(look,glow);
  const g=new (T().Group)(),root=piv(0,0,0,g);
  const st=look.style,a=look.arch,big=st===3?1.1:1;root.scale.set(big,big,big);
  const sh=look.shirt,sh2=shade(sh,.78),ac=look.accent,pa=look.pants,pa2=shade(pa,.7),sk=look.skin,sk2=shade(sk,.86),hr=look.hair;

@@ -10,7 +10,7 @@ let on=false,scene,cam,ren,raf=0,t0=0,time=0,mode,lvl=1,label="",ch=null,myId=""
 let me=null;const bots=[],rem=new Map(),proj=[],hazards=[],walls=[];
 let yaw=0,pitch=.32,dist=13,keys={},md=0,joy={x:0,z:0},jumpHeld=false,camT=null,fovKick=0;
 let combo={n:0,t:0},tgt=null,tgtT=0,spT=0,bt=0,ct=0,hudT=0,KITS=null;
-let training={lvl:3,auto:true},host=false,ultCD=0,botSeq=0,bst=0;
+let training={lvl:3,auto:true},host=false,ultCD=0,botSeq=0,bst=0,duelScore={mine:0,theirs:0,finished:false};
 const insaneActive=()=>!!(window.App&&App.insane&&App.insane());
 const canTrain=()=>mode==="grind"||mode==="personal"||(mode==="online"&&host);
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -324,7 +324,7 @@ function killBot(b,att){b.dead=true;b.rt=2.2;b.st="ragdoll";const c=20*b.lv+10;
  if(att&&att.rid&&!att.isBotGhost){if(ch)ch.hit({to:att.rid,by:b.bid,k:1,bot:1,c,xp:10+5*b.lv})}
  else{window.App.reward({coins:c,xp:10+5*b.lv,kills:1});feed("KO! +"+c+" coins");FX.banner("K.O.","#ffd54a")}
  spT=2}
-function die(att){me.dead=true;me.rt=3.5;me.st="ragdoll";me.stT=3;interrupt(me);if(ch&&me.lastBy)ch.hit({to:me.lastBy,by:myId,k:1});feed("Knocked out! Respawning...");FX.banner("KNOCKED OUT","#ff5050")}
+function die(att){if(mode==="duel"&&!duelScore.finished){duelScore.theirs++;duelUpdate()}me.dead=true;me.rt=3.5;me.st="ragdoll";me.stT=3;interrupt(me);if(ch&&me.lastBy)ch.hit({to:me.lastBy,by:myId,k:1});feed("Knocked out! Respawning...");FX.banner("KNOCKED OUT","#ff5050")}
 function respawn(){me.dead=false;me.hp=me.mhp;me.st="free";me.stT=0;me.inv=2;me.burn=me.poison=null;me.frozen=0;me.awk=Math.min(me.awk,50);const s=spawnPoint();me.x=s[0];me.z=s[1];me.y=0;me.vx=me.vz=me.vy=0;drawTag(me)}
 function spawnPoint(){for(let i=0;i<40;i++){const x=rnd(-20,20),z=rnd(-20,20);if(!World.blocked(x,1,z)&&!World.props.some(p=>p.alive&&Math.hypot(p.x-x,p.z-z)<3))return[x,z]}return[0,0]}
 // ---------- Super Insane Mode: key 5 ultimate combo ----------
@@ -357,8 +357,9 @@ function onHit(p){
  if(!me)return;
  if(p.to!==myId){// a hit on one of my bots (private server host)
   if(p.k)return;const b=bots.find(x=>x.bid===p.to);if(b&&!b.dead){const src=rem.get(p.by)||{x:p.ax,z:p.az,rid:p.by};receive(b,Object.assign({},src,{rid:p.by,x:p.ax,z:p.az}),p.h||{dmg:5,kind:"light"})}return}
- if(p.k){if(p.bot){window.App.reward({coins:p.c||30,xp:p.xp||15,kills:1});feed("Bot KO! +"+(p.c||30)+" coins")}else{window.App.reward({coins:100,xp:40,wins:1});feed("KO! +100 coins")}FX.banner("K.O.","#ffd54a");return}
+ if(p.k){if(mode==="duel"&&!p.bot&&!duelScore.finished){duelScore.mine++;duelUpdate()}if(p.bot){window.App.reward({coins:p.c||30,xp:p.xp||15,kills:1});feed("Bot KO! +"+(p.c||30)+" coins")}else{window.App.reward({coins:100,xp:40,wins:1});feed("KO! +100 coins")}FX.banner("K.O.","#ffd54a");return}
  me.lastBy=p.by;const src=rem.get(p.by)||{x:p.ax,z:p.az,rid:p.by};receive(me,Object.assign({},src,{rid:p.by,x:p.ax,z:p.az}),p.h||{dmg:5,kind:"light"})}
+function duelUpdate(){if(mode!=="duel")return;const text="DUEL · YOU "+duelScore.mine+" : "+duelScore.theirs+" OPPONENT";$("arena").textContent=text;if(duelScore.mine>=5||duelScore.theirs>=5){duelScore.finished=true;FX.banner(duelScore.mine>=5?"DUEL VICTORY!":"DUEL DEFEAT",duelScore.mine>=5?"#ffd54a":"#ff5050");feed("First to 5 KOs reached. Return HOME to leave match.")}}
 function onLeave(k){for(const [id,r] of rem)if(id===k||id.indexOf(k)===0){removeFighter(r);rem.delete(id)}}
 // ---------- HUD ----------
 function feed(t){$("feed").textContent=t;clearTimeout(feed.t);feed.t=setTimeout(()=>{$("feed").textContent=""},2500)}
@@ -383,7 +384,7 @@ function hud(){
 }
 // ---------- main ----------
 function start(o){
- stop();pf=P();mode=o.mode;lvl=o.level||1;host=!!o.host;training={lvl:mode==="grind"?lvl:3,auto:mode==="grind"};ultCD=0;botSeq=0;myId=pf.username+"_"+Math.random().toString(36).slice(2,6);label="";
+ stop();pf=P();mode=o.mode;duelScore={mine:0,theirs:0,finished:false};lvl=o.level||1;host=!!o.host;training={lvl:mode==="grind"?lvl:3,auto:mode==="grind"};ultCD=0;botSeq=0;myId=pf.username+"_"+Math.random().toString(36).slice(2,6);label="";
  KITS=window.KITS;low=("ontouchstart" in window)||innerWidth<700;
  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
  scene=new THREE.Scene();cam=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,1200);
@@ -393,9 +394,10 @@ function start(o){
  Rig.setQuality(low);World.build(scene,{low});FX.init(scene,cam,$("fxc"),low);if(low){cam.far=320;cam.updateProjectionMatrix();scene.fog.near=60;scene.fog.far=240}
  const S=statsFor(pf),sk=DT.SKINS[pf.skin||0];
  me=makeFighter({name:pf.username,charId:pf.char,col:sk&&sk[1]!=null?sk[1]:S.c.col,glow:S.w.col,kit:S.kit,skinId:pf.skin||0,isMe:true});me.tag.s.visible=false;me.title=pf.title||"";me.S=S;me.hp=me.mhp=S.mhp;const sp=spawnPoint();me.x=sp[0];me.z=sp[1];me.ctrl=true;drawTag(me);
- if(mode==="online"){ch=window.Backend.join(o.room,{id:myId,name:pf.username},{state:onState,hit:onHit,leave:onLeave});
+ if(mode==="online"||mode==="duel"){ch=window.Backend.join(o.room,{id:myId,name:pf.username},{state:onState,hit:onHit,leave:onLeave});
   if(ch)label=o.room.indexOf("p-")===0?"PARTY "+o.room.slice(2).toUpperCase():"PUBLIC SERVER";
   else{window.App.toast("Online needs the free Supabase setup. Starting offline practice.");mode="grind";lvl=3;label="OFFLINE PRACTICE"}}
+ if(mode==="duel")label="DUEL · FIRST TO 5 KOs";
  if(mode==="personal")label="MY ARENA · PRIVATE";
  if(mode==="online"&&host&&ch)label+=" · HOST";
  if(mode==="grind"&&!label)label="GRIND LV"+lvl+" "+["ROOKIE","EASY","NORMAL","SKILLED","HARD","VETERAN","ELITE","MASTER","NIGHTMARE","IMPOSSIBLE"][lvl-1];
@@ -432,7 +434,7 @@ function frame(rdt,draw){
   if(f.fl>0){f.fl-=dt*60;f.rig.root.traverse(m=>{if(m.isMesh&&m.material&&m.material.emissive&&!m.material._fl){m.material=m.material.clone();m.material._fl=1}if(m.isMesh&&m.material._fl)m.material.emissive.setHex(f.fl>0?0x662222:0)})}
   if(f.inv>0&&f.isMe&&!f.dead)f.rig.g.visible=Math.floor(time*20)%2===0||f.inv<.3;else f.rig.g.visible=true}
  // online sync
- if(ch){bt-=rdt;if(bt<=0){bt=.08;sendState()}if(host&&bots.length){bst-=rdt;if(bst<=0){bst=.15;sendBots()}}ct-=rdt;if(ct<=0){ct=1;$("arena").textContent=label+" · "+ch.count()+" online"}}
+ if(ch){bt-=rdt;if(bt<=0){bt=.08;sendState()}if(host&&bots.length){bst-=rdt;if(bst<=0){bst=.15;sendBots()}}ct-=rdt;if(ct<=0){ct=1;if(mode==="duel")duelUpdate();else $("arena").textContent=label+" · "+ch.count()+" online"}}
  // camera
  const sh=FX.update(dt,rdt);
  pitch=clamp(pitch,-.15,1.15);const tx=me.x,ty=me.y+3.6,tz=me.z;

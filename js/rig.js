@@ -110,7 +110,7 @@ function buildR6(look,glow){
  const box=(w,h,d)=>rbox(w,h,d,.065);
  const chest=part(torso,box(2,2,1),shirt,0,0,0);
  const arm=side=>{const sp=piv(side*1.5,.95,0,torso),el=piv(0,0,0,sp);part(sp,box(1,2,1),skin,0,-1,0);return{sp,el}};
- const leg=side=>{const hp=piv(side*.5,-.98,0,hips),kn=piv(0,0,0,hp);part(hp,box(1,2,1),pants,0,-1,0);return{hp,kn}};
+ const leg=side=>{const hp=piv(side*.5,0,0,hips),kn=piv(0,0,0,hp);part(hp,box(1,2,1),pants,0,-1,0);return{hp,kn}};
  const L=arm(-1),R=arm(1),LL=leg(-1),RL=leg(1);
  // The head is a vertically oriented cylinder with softened rim edges, resting directly on the torso.
  const neck=piv(0,1,0,torso),head=piv(0,.53,0,neck);

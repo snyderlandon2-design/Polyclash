@@ -60,7 +60,7 @@ function hero(canvas,p){if(!window.THREE||!canvas)return;if(!H){const r=new (T()
   const ring=new (T().Mesh)(new (T().TorusGeometry)(2.7,.05,8,60),new (T().MeshStandardMaterial)({color:0xffd54a,emissive:0xffd54a,emissiveIntensity:.8}));ring.rotation.x=Math.PI/2;sc.add(ring);
   H={r,sc,c,f:null,key:"",t:0,raf:0}}
  const d=DT(),c=d.CH[p.char]||d.CH[0],sk=d.SKINS[p.skin||0],col=sk&&sk[1]!=null?sk[1]:c.col,k=p.char+"_"+col;
- if(H.key!==k){if(H.f)H.sc.remove(H.f.rig.g);const look=Rig.lookFor(p.char,col);const rig=Rig.build(look,(d.WP[p.weapon]||d.WP[0]).col);rig.g.traverse(m=>{if(m.isMesh&&!m.userData.ol)m.castShadow=true});H.sc.add(rig.g);H.f={rig,look,ph:0,anState:"idle",vy:0,vx:0,vz:0};H.key=k}
+ if(H.key!==k){if(H.f)H.sc.remove(H.f.rig.g);const look=Rig.lookFor(p.char,col,p.skin||0);const rig=Rig.build(look,(d.WP[p.weapon]||d.WP[0]).col);rig.g.traverse(m=>{if(m.isMesh&&!m.userData.ol)m.castShadow=true});H.sc.add(rig.g);H.f={rig,look,ph:0,anState:"idle",vy:0,vx:0,vz:0};H.key=k}
  const loop=()=>{if(!canvas.isConnected||canvas.offsetParent===null){H.raf=0;return}const w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.width!==w*Math.min(2,devicePixelRatio)){H.r.setPixelRatio(Math.min(2,devicePixelRatio));H.r.setSize(w,h,false);H.c.aspect=w/h;H.c.updateProjectionMatrix()}
   H.t+=.016;H.f.rig.g.rotation.y=Math.sin(H.t*.6)*.6+.3;Rig.update(H.f,.016,H.t);H.c.position.set(0,4.2,13.5);H.c.lookAt(0,2.9,0);H.r.render(H.sc,H.c);H.raf=requestAnimationFrame(loop)};
  if(!H.raf)H.raf=requestAnimationFrame(loop)}

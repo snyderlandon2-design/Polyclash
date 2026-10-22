@@ -8,7 +8,7 @@ const P=()=>window.App.P(),pw=k=>window.App.pw(k);
 const GRAV=72,WALK=13,RUN=22;
 let on=false,scene,cam,ren,raf=0,t0=0,time=0,mode,lvl=1,label="",ch=null,myId="",pf,low=false;
 let me=null;const bots=[],rem=new Map(),proj=[],hazards=[],walls=[];
-let yaw=0,pitch=.32,dist=13,keys={},md=0,joy={x:0,z:0},jumpHeld=false,camT=null,fovKick=0;
+let adminFly=false,adminObserve=false;let yaw=0,pitch=.32,dist=13,keys={},md=0,joy={x:0,z:0},jumpHeld=false,camT=null,fovKick=0;
 let combo={n:0,t:0},tgt=null,tgtT=0,spT=0,bt=0,ct=0,hudT=0,KITS=null;
 let training={lvl:3,auto:true},host=false,ultCD=0,botSeq=0,bst=0,duelScore={mine:0,theirs:0,finished:false};
 const insaneActive=()=>!!(window.App&&App.insane&&App.insane());
@@ -216,6 +216,8 @@ function jump(f){if(f.dead)return;
  f.vy=(f.carry?18:25)*(f.isMe&&insaneActive()?1.35:1);FX.dust(f.x,.2,f.z,3)}
 // ---------- per-fighter update ----------
 function physics(f,dt){
+ if(f.isMe&&(adminFly||adminObserve)){f.x+=f.vx*dt;f.z+=f.vz*dt;f.y=Math.max(0,f.y+f.vy*dt);f.floorY=0;f.air=true;f.rig.g.position.set(f.x,f.y,f.z);return}
+
  const oldY=f.y;
  const wasAir=!grounded(f);
  if(f.hang>0){f.hang-=dt;if(f.vy<-3)f.vy=-3;f.vy-=GRAV*.1*dt}else f.vy-=GRAV*dt;f.y+=f.vy*dt;
@@ -271,6 +273,8 @@ function tickStatus(f,dt){
 function animState(f,moving,running){
  f.anState=f.st==="ragdoll"?"ragdoll":f.st==="down"?"down":f.st==="stun"?"stun":f.blk?"block":f.carry?"carry":!grounded(f)?"air":moving?(running?"run":"walk"):"idle"}
 function control(f,dt){// local player input
+ if(adminFly||adminObserve){const C=camFwd(),R=[-C[1],C[0]],forward=+(!!keys.KeyW)-+(!!keys.KeyS),strafe=+(!!keys.KeyD)-+(!!keys.KeyA),up=+(!!keys.Space)-+(!!keys.ArrowDown);const len=Math.max(1,Math.hypot(forward,strafe));const speed=keys.ShiftLeft?35:19;f.vx=(C[0]*forward+R[0]*strafe)/len*speed;f.vz=(C[1]*forward+R[1]*strafe)/len*speed;f.vy=up*speed;f.mv=!!(forward||strafe||up);f.anState=f.mv?"run":"idle";return}
+
  const C=camFwd(),R=[-C[1],C[0]];
  const kw=((keys.KeyW||keys.ArrowUp)?1:0)-((keys.KeyS||keys.ArrowDown)?1:0)||-joy.z,kd=((keys.KeyD)?1:0)-((keys.KeyA)?1:0)||joy.x;
  const L=Math.hypot(kw,kd),wx=L?(C[0]*kw+R[0]*kd)/Math.max(1,L):0,wz=L?(C[1]*kw+R[1]*kd)/Math.max(1,L):0;
@@ -344,8 +348,9 @@ function ultimate(){if(!insaneActive()||me.dead||ultCD>0||!free(me))return;ultCD
 let lastAn="",lastSt=0;
 function pushState(force){if(!ch||!me)return;bt=force?0:bt}
 function sendBots(){for(const b of bots){const a=b.act;ch.state({id:b.bid,n:b.name,x:+b.x.toFixed(2),y:+b.y.toFixed(2),z:+b.z.toFixed(2),r:+b.r.toFixed(2),hp:b.dead?0:Math.round(b.hp),mh:b.mhp,c:b.charId,k:0,w:0,an:b.anState,a:a?a.name+(a.name==="m1"?(b.anM1||0):""):"",as:0,aw:b.awT>0?1:0,cr:"",ph:+b.ph.toFixed(2),bot:1})}}
-function sendState(){const a=me.act;ch.state({id:myId,n:pf.username,x:+me.x.toFixed(2),y:+me.y.toFixed(2),z:+me.z.toFixed(2),r:+me.r.toFixed(2),hp:me.dead?0:Math.round(me.hp),mh:me.mhp,c:pf.char,k:pf.skin||0,w:pf.weapon,an:me.anState,a:a?a.name+(a.name==="m1"?me.anM1:""):"",as:a?+(a.t).toFixed(2):0,aw:me.awT>0?1:0,cr:me.carry?me.carry.type:"",ph:+me.ph.toFixed(2),ins:insaneActive()?1:0})}
+function sendState(){const a=me.act;ch.state({obs:adminObserve?1:0,id:myId,n:pf.username,x:+me.x.toFixed(2),y:+me.y.toFixed(2),z:+me.z.toFixed(2),r:+me.r.toFixed(2),hp:me.dead?0:Math.round(me.hp),mh:me.mhp,c:pf.char,k:pf.skin||0,w:pf.weapon,an:me.anState,a:a?a.name+(a.name==="m1"?me.anM1:""):"",as:a?+(a.t).toFixed(2):0,aw:me.awT>0?1:0,cr:me.carry?me.carry.type:"",ph:+me.ph.toFixed(2),ins:insaneActive()?1:0})}
 function onState(p){
+ if(p.obs){const hidden=rem.get(p.id);if(hidden){removeFighter(hidden);rem.delete(p.id)}return}
  let r=rem.get(p.id);
  if(!r){const c=DT.CH[p.c]||DT.CH[0];const sk=DT.SKINS[p.k];r=makeFighter({name:p.n,charId:p.c||0,col:sk&&sk[1]!=null?sk[1]:c.col,glow:p.bot?0xff3344:(DT.WP[p.w]||DT.WP[0]).col,kit:DT.PIDX[c.pw]||0,skinId:p.k||0,rid:p.id,isRemote:true,isBotGhost:!!p.bot});r.S={dmg:1,spd:1,agi:1,rng:1};r.x=p.x;r.z=p.z;rem.set(p.id,r);
   if(!p.bot&&window.Backend.titles)window.Backend.titles([p.n]).then(o=>{if(o[p.n]){r.title=o[p.n];r.tag.last=-1;drawTag(r)}})}
@@ -355,6 +360,7 @@ function onState(p){
  drawTag(r)}
 function onHit(p){
  if(!me)return;
+ if(adminObserve&&p.to===myId)return;
  if(p.to!==myId){// a hit on one of my bots (private server host)
   if(p.k)return;const b=bots.find(x=>x.bid===p.to);if(b&&!b.dead){const src=rem.get(p.by)||{x:p.ax,z:p.az,rid:p.by};receive(b,Object.assign({},src,{rid:p.by,x:p.ax,z:p.az}),p.h||{dmg:5,kind:"light"})}return}
  if(p.k){if(mode==="duel"&&!p.bot&&!duelScore.finished){duelScore.mine++;duelUpdate()}if(p.bot){window.App.reward({coins:p.c||30,xp:p.xp||15,kills:1});feed("Bot KO! +"+(p.c||30)+" coins")}else if(mode==="duel"){feed("DUEL K.O. · "+duelScore.mine+"/5")}else{window.App.reward({coins:100,xp:40,wins:1});feed("KO! +100 coins")}FX.banner("K.O.","#ffd54a");return}
@@ -407,7 +413,7 @@ function start(o){
  $("train").classList.toggle("hide",!canTrain());$("gAdmin").classList.toggle("hide",!(window.App.staff&&App.staff()));
  try{history.pushState({arena:1},"")}catch(e){}
  yaw=Math.PI*.25;pitch=.32;spT=1;bt=0;time=0;t0=performance.now();on=true;raf=requestAnimationFrame(loop)}
-function stop(){on=false;cancelAnimationFrame(raf);if(ch){ch.close();ch=null}if(document.pointerLockElement)document.exitPointerLock();
+function stop(){adminFly=false;adminObserve=false;on=false;cancelAnimationFrame(raf);if(ch){ch.close();ch=null}if(document.pointerLockElement)document.exitPointerLock();
  if(FX&&FX.clear)FX.clear();bots.forEach(removeFighter);bots.length=0;rem.forEach(removeFighter);rem.clear();proj.length=0;hazards.length=0;walls.length=0;
  if(ren){ren.dispose();ren.domElement.remove();ren=null}scene=null;me=null;$("gameUI").classList.add("hide");document.body.classList.remove("ingame");$("adminScreen").classList.remove("overlay");keys={};md=0;joy.x=joy.z=0;jumpHeld=false}
 function loop(ts){
@@ -449,7 +455,7 @@ function frame(rdt,draw){
 // ---------- input ----------
 const isTyping=e=>e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA");
 addEventListener("keydown",e=>{if(!on||isTyping(e))return;if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Tab"].indexOf(e.code)>=0)e.preventDefault();if(e.repeat)return;keys[e.code]=1;const c=e.code;
- if(c==="Space"){jumpHeld=true;jump(me)}
+ if(c==="Space"){jumpHeld=true;if(!adminFly&&!adminObserve)jump(me)}
  else if(c==="Digit1"||c==="Numpad1")useMove(me,0);else if(c==="Digit2"||c==="Numpad2")useMove(me,1);else if(c==="Digit3"||c==="Numpad3")useMove(me,2);else if(c==="Digit4"||c==="Numpad4")useMove(me,3);else if(c==="Digit5"||c==="Numpad5")ultimate();else if(c==="Digit6"||c==="Numpad6")weaponMove(me);
  else if(c==="KeyQ")dash(me,me.inDir?me.inDir[0]:0,me.inDir?me.inDir[1]:0);else if(c==="KeyG")awaken(me);else if(c==="KeyR")finisher(me);
  else if(c==="KeyE"){if(me.carry){if(free(me))throwProp(me)}else if(free(me)){const p=World.nearestProp(me.x,me.z,3.2,true);if(p)pickup(me,p)}}
@@ -479,5 +485,6 @@ cp.addEventListener("touchmove",e=>{if(!lt)return;for(const t of e.changedTouche
 cp.addEventListener("touchend",()=>{lt=null});
 function refresh(){if(!on)return;buildMoves();$("train").classList.toggle("hide",!canTrain())}
 function trainSpawn(){if(!canTrain()||!on)return;if(bots.filter(alive).length>=8){window.App.toast("Max 8 bots at once");return}spawnBot(training.lvl)}
-return{start,stop,refresh,get active(){return on},_debug:()=>({me,bots,World,K,useMove,m1,dash,awaken,finisher,pickup,throwProp,keys,setJump:v=>{jumpHeld=v},onState,onHit,rem,info:()=>{let m=0;scene.traverse(o=>{if(o.isMesh)m++});return{meshes:m,calls:ren.info.render.calls,tris:ren.info.render.triangles}},step:(n,d)=>{for(let i=0;i<n;i++)frame(d||1/60,false)},setYaw:v=>{yaw=v},joy,extend,ultimate,training,trainSpawn,insaneActive,wallJump,setMode:v=>{mode=v}})};
+function adminMode(type,enabled){if(!on||!pf||pf.role!=="mega")return false;if(type==="fly")adminFly=!!enabled;else if(type==="observe"){adminObserve=!!enabled;if(adminObserve)adminFly=true;me.rig.g.traverse(o=>{if(o.isMesh&&o.material){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){m.transparent=true;m.opacity=adminObserve?.42:1}}});}else return false;return true}
+return{start,stop,refresh,adminMode,get active(){return on},_debug:()=>({me,bots,World,K,useMove,m1,dash,awaken,finisher,pickup,throwProp,keys,setJump:v=>{jumpHeld=v},onState,onHit,rem,info:()=>{let m=0;scene.traverse(o=>{if(o.isMesh)m++});return{meshes:m,calls:ren.info.render.calls,tris:ren.info.render.triangles}},step:(n,d)=>{for(let i=0;i<n;i++)frame(d||1/60,false)},setYaw:v=>{yaw=v},joy,extend,ultimate,training,trainSpawn,insaneActive,wallJump,setMode:v=>{mode=v}})};
 })();

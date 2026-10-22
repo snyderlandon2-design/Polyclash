@@ -6,6 +6,7 @@ create table if not exists public.profile_snapshots (
  captured_at timestamptz not null default now(),
  snapshot jsonb not null
 );
+create index if not exists profile_snapshots_user_time_idx on public.profile_snapshots(user_id,captured_at desc);
 alter table public.profile_snapshots enable row level security;
 revoke all on public.profile_snapshots from anon, authenticated;
 

@@ -1,5 +1,5 @@
-/* Optional: paste your FREE Supabase project URL + anon (publishable) key to turn on
-   cross-device accounts, leaderboard and online play. Leave empty for local-only mode.
-   NEVER put a service-role key here. NEVER put any password in this file.
-   LOCAL_MEGA_USERNAME only matters in local mode (no Supabase). Online, mega admin is set by the database. */
-window.PC_CONFIG={SUPABASE_URL:"https://ugjpgohbkienqigumkqx.supabase.co",SUPABASE_ANON_KEY:"sb_publishable_xhxlY9qlaDNvPjGo0dD-HA_X-mt56n2",LOCAL_MEGA_USERNAME:"Landon2"};
+/* Poly-Clash Supabase frontend configuration.
+   The publishable key is safe for browser use with correctly configured RLS.
+   Never place a service-role key or database password here.
+   Owner privileges must be assigned securely in Supabase, never by username alone. */
+window.PC_CONFIG={SUPABASE_URL:"https://vhtaayjvgdjgxuwcvjis.supabase.co",SUPABASE_ANON_KEY:"sb_publishable_wS2GwrR4FuSFgUhDIj9MFQ_6wolfYhT",LOCAL_MEGA_USERNAME:"Landon2"};

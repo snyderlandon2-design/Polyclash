@@ -39,7 +39,8 @@ async function send(e){e.preventDefault();if(busy)return;const p=me();if(!p||!sb
   $("chatText").value="";await load();
  }catch(e){err(e.message||"Message not sent")}finally{busy=false}
 }
-$("chatToggle").onclick=()=>{const panel=$("chatPanel");panel.classList.toggle("hide");if(!panel.classList.contains("hide")){const p=me();$("chatAdmin").classList.toggle("hide",!p||p.role!=="mega");load();if(!timer)timer=setInterval(load,4000)}else{clearInterval(timer);timer=null}};
+const toggle=()=>{const panel=$("chatPanel");panel.classList.toggle("hide");if(!panel.classList.contains("hide")){const p=me();$("chatAdmin").classList.toggle("hide",!p||p.role!=="mega");load();if(!timer)timer=setInterval(load,4000)}else{clearInterval(timer);timer=null}};
+$("chatToggle").onclick=toggle;$("gChat").onclick=toggle;
 $("chatClose").onclick=()=>{ $("chatPanel").classList.add("hide");clearInterval(timer);timer=null};
 $("chatGroup").onclick=()=>tab("group");$("chatDirect").onclick=()=>tab("dm");$("chatAdmin").onclick=()=>tab("announcement");
 $("chatTo").onchange=load;$("chatForm").onsubmit=send;

@@ -20,7 +20,12 @@ function shop(){
  ];
  const target=$("featuredShop");if(!target)return;
  // Owner-controlled slots are stored on the server, not in each player browser.
- if(serverSlots){for(const [category,items] of categories){const slots=serverSlots.filter(x=>x.category===category).sort((a,b)=>a.slot-b.slot);if(slots.length){const pool=items.slice();const selected=slots.map(slot=>{const match=pool.find(x=>x.id===slot.item_id);return match?{...match,price:slot.price}:null}).filter(Boolean);if(selected.length)items.splice(0,items.length,...selected)}}}
+ if(serverSlots){for(const [category,items] of categories){const slots=serverSlots.filter(x=>x.category===category).sort((a,b)=>a.slot-b.slot);if(slots.length){const pool=category==="Characters"?D().CH.filter(x=>!x.ex).map(x=>({id:x.id,name:x.name,rar:x.rar,field:"chars"})):
+ category==="Weapons"?D().WP.filter(x=>!x.ex).map(x=>({id:x.id,name:x.name,rar:x.rar,field:"weapons"})):
+ category==="Skins"?D().SKINS.map((x,id)=>({id,name:x[0],rar:0,field:"skins"})):
+ category==="Moves"?(window.PC_EXTRA_MOVES||[]).map((x,id)=>({id,name:x.n,rar:0,field:"boughtMoves"})):
+ ["Wave","Cheer","Dance","Bow","Victory Pose"].map((name,id)=>({id,name,rar:0,field:"emotes"}));
+ const selected=slots.map(slot=>{const match=pool.find(x=>x.id===slot.item_id);return match?{...match,price:slot.price}:null}).filter(Boolean);if(selected.length)items.splice(0,items.length,...selected)}}}
  else for(const [,items] of categories){if(items.length>1){const offset=cycle()%items.length;items.push(...items.splice(0,offset))}}
  target.innerHTML=categories.map(([name,items])=>'<h4>'+name+'</h4><div class="bags">'+items.map(x=>'<button class="bag" data-field="'+x.field+'" data-id="'+x.id+'"><b>'+esc(x.name)+'</b><small>'+((p[x.field]||[]).includes(x.id)?"OWNED":x.price+" coins")+'</small></button>').join("")+'</div>').join("");
  target.querySelectorAll("button").forEach(btn=>btn.onclick=async()=>{

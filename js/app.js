@@ -117,7 +117,7 @@ async function run(q,fn,ok){if(q&&!confirm(q))return;try{await fn();toast(ok||"D
  if(insp.username===P.username){const fresh=await B.session();if(fresh){P=fresh;mega();hdr()}}
  inspect(insp.id);megaList()}
 function findItem(kind,name){const n=String(name||"").trim().toLowerCase();if(kind==="skins"){const i=DT.SKINS.findIndex(s=>s[0].toLowerCase()===n);return i}const src=kind==="chars"?DT.CH:DT.WP;const x=src.find(i=>!i.ex&&i.name.toLowerCase()===n);return x?x.id:-1}
-function act(a){const d=insp,dd=d.data||{},amt=()=>Math.round(Number(($("iAmt")||{}).value)||0);
+function act(a){if(a==="deleteAccount"){if(P.role!=="mega"||insp.role==="owner")return toast("Not allowed");const name=insp.username;return run("PERMANENTLY delete "+name+" and free the username? This cannot be undone.",()=>B.deleteAccount(insp.id),"Account deleted")};const d=insp,dd=d.data||{},amt=()=>Math.round(Number(($("iAmt")||{}).value)||0);
  const list=k=>(dd[k]&&dd[k].slice())||(k==="chars"?[DT.START]:k==="weapons"?[0]:[0]);
  if(a==="cAdd")return run("Give "+amt()+" coins to "+d.username+"?",()=>B.aCoins(d.id,amt()),"Coins added");
  if(a==="cSub")return run("Remove "+amt()+" coins from "+d.username+"?",()=>B.aCoins(d.id,-amt()),"Coins removed");

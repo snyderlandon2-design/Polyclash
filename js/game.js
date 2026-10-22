@@ -183,7 +183,7 @@ function wallJump(f){f.wj=(f.wj||0)+1;f.vy=27;f.vx=f.wallN[0]*17;f.vz=f.wallN[1]
 function dash(f,dx,dz){
  if(f.dead)return;
  if(f.st!=="free"){// evasive
-  if(f.evT>0)return;f.evT=pw("inf")&&f.isMe?2:20;interrupt(f);f.st="free";f.stT=0;f.inv=.6;f.vy=10;f.y=Math.max(f.y,.5);const F=fwd(f);f.vx=-F[0]*20;f.vz=-F[1]*20;f.frozen=0;
+  if(f.evT>0)return;f.evT=pw("inf")&&f.isMe?2:12;interrupt(f);f.st="free";f.stT=0;f.inv=.85;f.vy=10;f.y=Math.max(f.y,.5);const F=fwd(f);f.vx=-F[0]*20;f.vz=-F[1]*20;f.frozen=0;
   FX.ring(f.x,f.y+3,f.z,0xffffff,6,.4);FX.burst(f.x,f.y+3,f.z,0xffffff,14,12,.35,.35);if(f.isMe)FX.banner("EVASIVE","#fff");return}
  if(f.lock>0||f.dashCD>0||f.carry)return;
  let dir="F",ddx=dx,ddz=dz;if(!ddx&&!ddz){const F=fwd(f);ddx=F[0];ddz=F[1]}

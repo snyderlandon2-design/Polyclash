@@ -107,15 +107,15 @@ function buildR6(look,glow){
  const skin=look.skinTheme===0?0xb7bec5:look.skin;
  const shirt=look.skinTheme===0?0xb7bec5:look.shirt;
  const pants=look.skinTheme===0?0xb7bec5:look.pants;
- const box=(w,h,d)=>new three.BoxGeometry(w,h,d);
+ const box=(w,h,d)=>rbox(w,h,d,.065);
  const chest=part(torso,box(2,2,1),shirt,0,0,0);
  const arm=side=>{const sp=piv(side*1.5,.95,0,torso),el=piv(0,0,0,sp);part(sp,box(1,2,1),skin,0,-1,0);return{sp,el}};
  const leg=side=>{const hp=piv(side*.5,-.98,0,hips),kn=piv(0,0,0,hp);part(hp,box(1,2,1),pants,0,-1,0);return{hp,kn}};
  const L=arm(-1),R=arm(1),LL=leg(-1),RL=leg(1);
  // The head is a vertically oriented cylinder with softened rim edges, resting directly on the torso.
  const neck=piv(0,1,0,torso),head=piv(0,.53,0,neck);
- const cylinder=new three.CylinderGeometry(.58,.58,1.06,24,1,false);
- const pos=cylinder.attributes.position;for(let i=0;i<pos.count;i++){const y=pos.getY(i),radius=Math.hypot(pos.getX(i),pos.getZ(i));if(radius>.01&&Math.abs(y)>.38){const k=1-(Math.abs(y)-.38)*.23;pos.setX(i,pos.getX(i)*k);pos.setZ(i,pos.getZ(i)*k)}}cylinder.computeVertexNormals();
+ const profile=[[0,-.53],[.38,-.53],[.47,-.505],[.535,-.45],[.57,-.36],[.585,-.24],[.585,.24],[.57,.36],[.535,.45],[.47,.505],[.38,.53],[0,.53]];
+ const cylinder=new three.LatheGeometry(profile.map(([x,y])=>new three.Vector2(x,y)),48);
  part(head,cylinder,skin,0,0,0);
  const fg=side=>{const mesh=new three.Mesh(box(.86,.85,.9),new three.MeshStandardMaterial({color:glow||0xffffff,emissive:glow||0xffffff,emissiveIntensity:.7,transparent:true,opacity:.75}));mesh.position.y=-1;mesh.visible=false;side.sp.add(mesh);return mesh};
  return{g,root,hips,torso,neck,head,L,R,LL,RL,glow:[fg(L),fg(R)],cur:{},look,chest,face:null,sway:[],ex:0};

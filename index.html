@@ -18,8 +18,23 @@
 <div class="grid2"><button class="btn red" data-go="grindScreen">GRIND / MY ARENA</button><button class="btn red" data-go="onlineScreen">ONLINE</button>
 <button class="btn gold" data-go="shopScreen">BAG SHOP</button><button class="btn" data-go="lockerScreen">LOCKER</button>
 <button class="btn" data-go="boardScreen">LEADERBOARD</button><button class="btn" data-go="guideScreen">POWER GUIDE</button><button id="adminBtn" class="btn hide" data-go="adminScreen">ADMIN</button></div>
-<button id="outBtn" class="lnk">Log out</button></div></section>
+<button class="btn" data-go="settingsScreen">⚙ SETTINGS</button><button id="outBtn" class="lnk">Log out</button></div></section>
 
+<section id="settingsScreen" class="screen"><div class="card big"><h2>SETTINGS</h2><p class="mu">Personalize your camera, interface and mobile controls. Saved on this device.</p>
+<label>Camera distance <input id="setCam" type="range" min="8" max="24" step="1" value="13"></label>
+<label>Camera sensitivity <input id="setSens" type="range" min="30" max="180" step="10" value="100"></label>
+<label>Graphics <select id="setGraphics"><option value="auto">Automatic</option><option value="low">Performance</option><option value="high">Quality</option></select></label>
+<h3>BUTTON POSITIONS</h3>
+<label>Home button horizontal position <input id="setHomeX" type="range" min="-90" max="90" value="0"></label>
+<label>Chat button horizontal position <input id="setChatX" type="range" min="-90" max="90" value="0"></label>
+<h3>MOBILE CONTROLS</h3>
+<label>Movement joystick horizontal position <input id="setJoyX" type="range" min="-100" max="100" value="0"></label>
+<label>Movement joystick vertical position <input id="setJoyY" type="range" min="-100" max="100" value="0"></label>
+<label>Attack buttons horizontal position <input id="setTouchX" type="range" min="-100" max="100" value="0"></label>
+<label>Attack buttons vertical position <input id="setTouchY" type="range" min="-100" max="100" value="0"></label>
+<div class="row"><button id="settingsReset" class="btn">RESET DEFAULTS</button><button class="btn gold" data-go="menuScreen">DONE</button></div>
+<h3>PLAYER NOTICE / TERMS</h3><p class="mu">Poly-Clash supports authorized moderator spectating of public in-game matches to investigate cheating, harassment, and rule violations. Spectating observes game characters and game events, not your device screen, other apps, or private information. Moderation actions may be logged.</p>
+</div></section>
 <section id="grindScreen" class="screen"><div class="card"><h2>GRIND ARENA</h2><p class="mu">Endless bots. Higher level = more coins.</p><div id="lvlGrid" class="grid2"></div><button class="btn" data-go="menuScreen">BACK</button></div></section>
 
 <section id="onlineScreen" class="screen"><div class="card"><h2>ONLINE</h2>
@@ -64,7 +79,7 @@
 
 <div id="gameUI" class="hide">
 <canvas id="fxc"></canvas>
-<div class="gbar"><button id="gHome" class="gb">&#8962; HOME</button><button id="gChat" class="gb" aria-label="Open chat">💬 CHAT</button><button id="gAdmin" class="gb adm hide">&#9881; ADMIN</button><span id="insB" class="insb hide">SUPER INSANE</span></div>
+<div class="gbar"><button id="gHome" class="gb">&#8962; HOME</button><button id="gSettings" class="gb" aria-label="Game settings">⚙</button><button id="gChat" class="gb" aria-label="Open chat">💬 CHAT</button><button id="gAdmin" class="gb adm hide">&#9881; ADMIN</button><span id="insB" class="insb hide">SUPER INSANE</span></div>
 <div class="hud"><div class="hname"><b id="hudName"></b><span id="arena"></span></div>
 <div class="bar"><div id="hpB" class="f hp"></div><span id="hpT"></span></div>
 <div class="bar aw"><div id="awB" class="f awk"></div><span id="awT">AWAKENING</span></div>
@@ -83,5 +98,5 @@
 <button class="tb" data-a="dash">DASH</button><button class="tb" data-a="jump">JUMP</button><button class="tb atk" data-a="m1">PUNCH</button></div></div>
 </div>
 <aside id="chatPanel" class="chatPanel hide" aria-label="Player chat"><div class="chatHead"><b>PLAYER CHAT</b><button id="chatClose" class="sb">✕</button></div><div class="chatTabs"><button id="chatGroup" class="on">GROUP</button><button id="chatDirect">PRIVATE</button><button id="chatAdmin">ANNOUNCE</button></div><div id="chatToWrap" class="hide"><input id="chatTo" placeholder="Recipient username" maxlength="16"></div><div id="chatMessages" class="chatMessages"></div><form id="chatForm" class="chatForm"><input id="chatText" placeholder="Type a message..." maxlength="500" autocomplete="off"><button type="submit">SEND</button></form><p id="chatError" class="tiny"></p></aside><div id="toast"></div>
-<script src="js/config.js"></script><script src="js/characters.js?v=20261021-r6b"></script><script src="js/backend.js?v=20261021-online1"></script><script src="js/rig.js?v=20261021-r6b"></script><script src="js/fx.js"></script><script src="js/world.js?v=20261021-3"></script><script src="js/kits.js"></script><script src="js/thumbs.js?v=20261021-r6b"></script><script src="js/moves.js?v=20261021-3"></script><script src="js/game.js?v=20261021-r6b"></script><script src="js/app.js?v=20261021-online1"></script><script src="js/chat.js?v=20261021-3"></script><script src="js/presence.js?v=1"></script>
+<script src="js/config.js"></script><script src="js/characters.js?v=20261021-r6b"></script><script src="js/backend.js?v=20261021-online1"></script><script src="js/rig.js?v=20261021-r6b"></script><script src="js/fx.js"></script><script src="js/world.js?v=20261021-3"></script><script src="js/kits.js"></script><script src="js/thumbs.js?v=20261021-r6b"></script><script src="js/moves.js?v=20261021-3"></script><script src="js/game.js?v=20261021-r6b"></script><script src="js/app.js?v=20261021-online1"></script><script src="js/chat.js?v=20261021-3"></script><script src="js/presence.js?v=1"></script><script src="js/settings.js?v=1"></script>
 </body></html>

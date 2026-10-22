@@ -25,7 +25,7 @@ function drawTag(f){const T=f.tag;if(!T)return;const hp=Math.max(0,Math.round(f.
 function statsFor(p){const c=DT.CH[p.char]||DT.CH[0],w=DT.WP[p.weapon]||DT.WP[0],L=(p.lv&&p.lv[p.char])||1;
  return{c,w,mhp:Math.round(100*c.hp*(1+L*.08)),dmg:c.dmg*(1+L*.1)*(1+(w.dmg-1)*.3),spd:c.spd,agi:c.agi,rng:1+(w.rng-3)*.12,kit:p.xKit&&DT.PIDX[p.xKit]!==undefined?DT.PIDX[p.xKit]:(DT.PIDX[c.pw]||0)}}
 function makeFighter(o){
- const look=window.Rig.lookFor(o.charId,o.col);const rig=window.Rig.build(look,o.glow);rig.g.traverse(m=>{if(m.isMesh)m.castShadow=!m.userData.ol&&(!low||m.parent===rig.torso||m.parent===rig.hips||m.parent===rig.head)});scene.add(rig.g);
+ const look=window.Rig.lookFor(o.charId,o.col,o.skinId||0);const rig=window.Rig.build(look,o.glow);rig.g.traverse(m=>{if(m.isMesh)m.castShadow=!m.userData.ol&&(!low||m.parent===rig.torso||m.parent===rig.hips||m.parent===rig.head)});scene.add(rig.g);
  const f=Object.assign({rig,look,x:0,y:0,z:0,vx:0,vy:0,vz:0,r:0,st:"free",stT:0,cd:[0,0,0,0],m1i:-1,m1T:0,m1CD:0,dashT:0,dashCD:0,dashDir:"F",blk:false,blkT:9,guard:100,awk:0,awT:0,fin:false,evT:0,inv:0,carry:null,pend:[],lock:0,root:null,buff:{},sh:0,ph:0,anState:"idle",fl:0,mv:false,air:false,dead:false,rt:0,hist:[],histT:0},o);
  f.kitDef=KITS[f.kit%KITS.length];
  if(f.isMe&&window.PC_EXTRA_MOVES){const slots=(pf.moveSlots||{})[f.kit]||[0,1,2,3],pool=[...f.kitDef.moves,...PC_EXTRA_MOVES];f.kitDef=Object.assign({},f.kitDef,{moves:slots.map((id,i)=>pool[id]&&((pool[id].unlockXP||0)<=pf.xp||pf.role==="mega")?pool[id]:pool[i])})}
@@ -347,7 +347,7 @@ function sendBots(){for(const b of bots){const a=b.act;ch.state({id:b.bid,n:b.na
 function sendState(){const a=me.act;ch.state({id:myId,n:pf.username,x:+me.x.toFixed(2),y:+me.y.toFixed(2),z:+me.z.toFixed(2),r:+me.r.toFixed(2),hp:me.dead?0:Math.round(me.hp),mh:me.mhp,c:pf.char,k:pf.skin||0,w:pf.weapon,an:me.anState,a:a?a.name+(a.name==="m1"?me.anM1:""):"",as:a?+(a.t).toFixed(2):0,aw:me.awT>0?1:0,cr:me.carry?me.carry.type:"",ph:+me.ph.toFixed(2),ins:insaneActive()?1:0})}
 function onState(p){
  let r=rem.get(p.id);
- if(!r){const c=DT.CH[p.c]||DT.CH[0];const sk=DT.SKINS[p.k];r=makeFighter({name:p.n,charId:p.c||0,col:sk&&sk[1]!=null?sk[1]:c.col,glow:p.bot?0xff3344:(DT.WP[p.w]||DT.WP[0]).col,kit:DT.PIDX[c.pw]||0,rid:p.id,isRemote:true,isBotGhost:!!p.bot});r.S={dmg:1,spd:1,agi:1,rng:1};r.x=p.x;r.z=p.z;rem.set(p.id,r);
+ if(!r){const c=DT.CH[p.c]||DT.CH[0];const sk=DT.SKINS[p.k];r=makeFighter({name:p.n,charId:p.c||0,col:sk&&sk[1]!=null?sk[1]:c.col,glow:p.bot?0xff3344:(DT.WP[p.w]||DT.WP[0]).col,kit:DT.PIDX[c.pw]||0,skinId:p.k||0,rid:p.id,isRemote:true,isBotGhost:!!p.bot});r.S={dmg:1,spd:1,agi:1,rng:1};r.x=p.x;r.z=p.z;rem.set(p.id,r);
   if(!p.bot&&window.Backend.titles)window.Backend.titles([p.n]).then(o=>{if(o[p.n]){r.title=o[p.n];r.tag.last=-1;drawTag(r)}})}
  r.tx=p.x;r.ty=p.y;r.tz=p.z;r.r=p.r;r.hp=p.hp;r.mhp=p.mh;r.seen=performance.now();r.dead=p.hp<=0;r.anState=p.an||"idle";r.ph=p.ph||0;r.st=p.an==="stun"?"stun":p.an==="ragdoll"?"ragdoll":"free";
  if(p.a&&p.a!==r.lastA){const n=p.a.indexOf("m1")===0?"m1":p.a;if(n==="m1")Rig.play(r,"m1",.3,Rig.m1Keys(r,+p.a.slice(2)||0));else Rig.play(r,n,.4);if(Rig.A[n]&&["thrust","cast1","stomp","spin","rise","charge","barrage","sweep","kickup","finisher","awaken"].indexOf(n)>=0)FX.burst(r.x,r.y+3,r.z,r.kitDef.col,10,8,.35,.4)}
@@ -392,7 +392,7 @@ function start(o){
  document.body.appendChild(ren.domElement);
  Rig.setQuality(low);World.build(scene,{low});FX.init(scene,cam,$("fxc"),low);if(low){cam.far=320;cam.updateProjectionMatrix();scene.fog.near=60;scene.fog.far=240}
  const S=statsFor(pf),sk=DT.SKINS[pf.skin||0];
- me=makeFighter({name:pf.username,charId:pf.char,col:sk&&sk[1]!=null?sk[1]:S.c.col,glow:S.w.col,kit:S.kit,isMe:true});me.tag.s.visible=false;me.title=pf.title||"";me.S=S;me.hp=me.mhp=S.mhp;const sp=spawnPoint();me.x=sp[0];me.z=sp[1];me.ctrl=true;drawTag(me);
+ me=makeFighter({name:pf.username,charId:pf.char,col:sk&&sk[1]!=null?sk[1]:S.c.col,glow:S.w.col,kit:S.kit,skinId:pf.skin||0,isMe:true});me.tag.s.visible=false;me.title=pf.title||"";me.S=S;me.hp=me.mhp=S.mhp;const sp=spawnPoint();me.x=sp[0];me.z=sp[1];me.ctrl=true;drawTag(me);
  if(mode==="online"){ch=window.Backend.join(o.room,{id:myId,name:pf.username},{state:onState,hit:onHit,leave:onLeave});
   if(ch)label=o.room.indexOf("p-")===0?"PARTY "+o.room.slice(2).toUpperCase():"PUBLIC SERVER";
   else{window.App.toast("Online needs the free Supabase setup. Starting offline practice.");mode="grind";lvl=3;label="OFFLINE PRACTICE"}}

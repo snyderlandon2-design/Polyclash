@@ -209,6 +209,10 @@ function physics(f,dt){
  const sp=Math.hypot(f.vx,f.vz);
  f.x+=f.vx*dt;f.z+=f.vz*dt;
  const hit=World.resolve(f,.9);
+ // Safety net: chained knockback, air teleports and wall collisions must never
+ // leave the fighter below the arena floor or with non-finite coordinates.
+ if(!Number.isFinite(f.y)||f.y<0){f.y=0;f.vy=Math.max(0,Number.isFinite(f.vy)?f.vy:0);f.hang=0;}
+ if(!Number.isFinite(f.x)||!Number.isFinite(f.z)){f.x=0;f.z=0;f.vx=0;f.vz=0;}
  if(grounded(f)){f.wj=0;if(f.airC)f.airC=null}
  if(hit&&!hit.prop&&!grounded(f)&&f.st==="free"){f.wallT=.3;f.wallN=[hit.nx,hit.nz]}
  if(hit&&hit.b&&!hit.b.round&&((f.insaneHit>0&&f.st==="ragdoll"&&sp>10)||(f.isMe&&insaneActive()&&(f.dashT>0||f.root)))){World.smash(hit.b,f.x,f.z)}

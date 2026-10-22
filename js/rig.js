@@ -99,103 +99,28 @@ const METAL=0xb9bec8,DMETAL=0x6d727c,LEATHER=0x5a3a22,WHITE=0xf3f3f3,BLACK=0x161
 // R6-inspired six-part avatar silhouette based on the CC-BY reference by mrduckys.
 // This is an original compatible mesh, not a downloaded Sketchfab file.
 function buildR6(look,glow){
- const g=new (T().Group)(),root=piv(0,0,0,g),hips=piv(0,2.03,0,root),torso=piv(0,.25,0,hips);
- const theme=look.skinTheme||0,st=look.style,shirt=look.shirt,accent=look.accent;
- const mat=(color,metal=0)=>new (T().MeshStandardMaterial)({color,roughness:metal?.34:.73,metalness:metal});
- const box=(parent,w,h,d,color,x,y,z,metal=0)=>{const m=new (T().Mesh)(new (T().BoxGeometry)(w,h,d),mat(color,metal));m.position.set(x||0,y||0,z||0);m.castShadow=true;parent.add(m);return m};
- const leg=(side)=>{const hp=piv(side*.48,-.22,0,hips),kn=piv(0,-.8,0,hp);
-  box(hp,.86,1.5,.87,look.pants,0,-.75,0);
-  box(kn,.9,.15,.96,look.shoe,0,-.73,.06);
-  if(theme===5||theme===7)box(hp,.9,.13,.9,accent,0,-.15,0,.5);
-  return{hp,kn}};
- box(hips,1.8,.43,.94,look.pants,0,0,0);
- const chest=box(torso,1.95,1.75,.98,shirt,0,.75,0);
- if(theme===1||theme===8||theme===10){box(torso,1.99,.19,1.02,accent,0,1.36,0);box(torso,.19,1.45,1.03,accent,0,.76,0)}
- if(theme===2||theme===6||theme===11){box(torso,1.25,.55,.06,accent,0,1.03,.52,.25);box(torso,.42,.4,.09,look.shoe,0,.54,.53)}
- if(theme===3||theme===9){for(let j=0;j<3;j++)box(torso,1.4,.09,.08,accent,0,.5+j*.36,.52,.4)}
- if(theme===4){box(torso,2.08,.22,1.04,accent,0,1.55,0,.5)}
- const arm=(side)=>{const sp=piv(side*1.37,1.43,0,torso),el=piv(0,-.85,0,sp);
-  box(sp,.84,1.72,.87,theme===0?shirt:look.skin,0,-.86,0);
-  if(theme>0){box(sp,.88,.72,.91,shirt,0,-.37,0);if(theme===3||theme===5||theme===8)box(sp,.9,.14,.94,accent,0,-.72,0,.5)}
-  return{sp,el}};
+ // Six visible R6 body parts only. No clothing geometry, hats, gloves, or joint segments.
+ const three=T(),g=new three.Group(),root=piv(0,0,0,g);
+ const hips=piv(0,2,0,root),torso=piv(0,0,0,hips);
+ const material=color=>new three.MeshStandardMaterial({color,roughness:.8,metalness:0});
+ const part=(parent,geometry,color,x,y,z)=>{const mesh=new three.Mesh(geometry,material(color));mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh};
+ const skin=look.skinTheme===0?0xb7bec5:look.skin;
+ const shirt=look.skinTheme===0?0xb7bec5:look.shirt;
+ const pants=look.skinTheme===0?0xb7bec5:look.pants;
+ const box=(w,h,d)=>new three.BoxGeometry(w,h,d);
+ const chest=part(torso,box(2,2,1),shirt,0,0,0);
+ const arm=side=>{const sp=piv(side*1.5,.95,0,torso),el=piv(0,0,0,sp);part(sp,box(1,2,1),skin,0,-1,0);return{sp,el}};
+ const leg=side=>{const hp=piv(side*.5,-.98,0,hips),kn=piv(0,0,0,hp);part(hp,box(1,2,1),pants,0,-1,0);return{hp,kn}};
  const L=arm(-1),R=arm(1),LL=leg(-1),RL=leg(1);
- const neck=piv(0,1.71,0,torso),head=piv(0,.61,0,neck);
- const headColor=theme===0?look.skin:look.skin;
- const hm=new (T().Mesh)(rbox(1.06,1.06,1.06,.19),mat(headColor));head.add(hm);hm.castShadow=true;
- const fc=document.createElement("canvas");fc.width=fc.height=128;const ctx=fc.getContext("2d");
- ctx.strokeStyle="#171717";ctx.fillStyle="#171717";ctx.lineWidth=6;ctx.lineCap="round";
- ctx.beginPath();ctx.ellipse(43,47,3.3,8,0,0,Math.PI*2);ctx.ellipse(84,47,3.3,8,0,0,Math.PI*2);ctx.fill();
- ctx.beginPath();ctx.arc(64,63,27,.15,Math.PI-.15);ctx.stroke();
- const fm=new (T().Mesh)(new (T().PlaneGeometry)(.89,.89),new (T().MeshBasicMaterial)({map:new (T().CanvasTexture)(fc),transparent:true,depthWrite:false,side:T().DoubleSide}));fm.position.z=.544;head.add(fm);
- // Unique skins change outfit silhouette, not just tint.
- if(theme===1||theme===9){box(head,1.14,.22,1.13,look.hair,0,.54,0);box(head,1.19,.09,.58,look.hair,0,.4,.65)}
- if(theme===2||theme===10){const horn=new (T().Mesh)(new (T().ConeGeometry)(.2,.55,5),mat(accent,.4));horn.position.set(-.36,.76,0);head.add(horn);const horn2=horn.clone();horn2.position.x=.36;head.add(horn2)}
- if(theme===3||theme===11){box(head,1.18,.28,1.15,accent,0,.52,0,.55);box(head,1.22,.13,.2,accent,0,.33,.53,.55)}
- if(theme===4||theme===6){box(torso,2.25,.3,1.18,accent,0,1.56,0,.45);box(head,1.18,.23,1.17,accent,0,.54,0,.45)}
- if(theme===5||theme===7){box(torso,1.5,.11,.09,accent,0,1.25,.53,.4);box(head,.19,.18,1.2,accent,0,.45,0,.5)}
- if(theme===8){box(torso,2.13,.18,1.1,accent,0,.16,0);box(head,1.2,.16,1.2,look.hair,0,.52,0)}
- // Archetype-specific clothing and readable silhouettes: twenty designs rather than five recolors.
- const a=look.arch,detail=shade(shirt,.67),bright=shade(accent,1.25);
- const strip=(x,y,w,h,color)=>box(torso,w,h,.055,color,x,y,.525);
- switch(a){
- case 0:case 3:case 13:strip(0,.65,1.5,.12,detail);strip(0,1.2,.6,.12,accent);break;
- case 1:case 9:case 14:strip(-.28,.82,.16,1.55,bright);strip(.28,.82,.16,1.55,bright);box(hips,1.92,.16,1.04,accent,0,.16,0);break;
- case 2:case 12:case 16:box(head,1.18,.18,1.16,look.hair,0,.53,0);box(head,1.08,.09,.27,accent,0,.35,.56);strip(0,.65,.16,1.2,detail);break;
- case 4:case 6:case 18:box(head,1.22,.22,1.22,detail,0,.54,0);box(torso,2.13,.18,1.07,detail,0,1.53,0);strip(0,.82,1.4,.16,bright);break;
- case 5:case 10:case 17:box(torso,2.25,.3,1.13,accent,0,1.5,0,.55);box(torso,1.24,.78,.08,detail,0,.8,.55,.35);strip(0,.85,.16,.7,bright);break;
- case 7:case 15:box(torso,2.15,.36,1.13,detail,0,1.5,0);box(head,1.13,.18,1.15,accent,0,.52,0);break;
- case 8:box(head,1.16,.22,1.16,detail,0,.52,0);box(head,1.19,.09,.55,accent,0,.38,.65);strip(0,.85,.7,.15,bright);break;
- case 11:box(head,1.12,.22,1.12,accent,0,.5,0);strip(-.4,.9,.16,1.1,detail);strip(.4,.9,.16,1.1,detail);break;
- case 19:box(torso,1.3,.75,.08,bright,0,.92,.54,.55);box(head,1.12,.16,1.14,accent,0,.52,0);break;
- }
- // Superhero-grade costume layers anchored to individual R6 limbs so punches and kicks stay articulated.
- const armor=(parent,w,h,d,c,x,y,z)=>box(parent,w,h,d,c,x,y,z,.18);
- const sole=shade(look.shoe,.54),cloth=shade(shirt,.8),metal=shade(accent,1.12);
- for(const [side,part,lp] of [[-1,L,LL],[1,R,RL]]){
-  // Distinct boots with cuffs, reinforced toes, raised heels and side seams.
-  armor(lp.hp,.91,.37,.96,look.shoe,0,-1.27,.025);
-  armor(lp.hp,.92,.12,1.04,sole,0,-1.48,.09);
-  armor(lp.hp,.93,.16,.99,metal,0,-1.02,0);
-  box(lp.hp,.34,.11,.08,accent,side*.18,-1.33,.51);
-  // Gloves, cuffs and sleeve panels follow the shoulder joint.
-  armor(part.sp,.87,.35,.91,look.shoe,0,-1.46,0);
-  armor(part.sp,.9,.12,.94,metal,0,-1.25,0);
-  if(a%4===0||a%4===3){
-   armor(part.sp,.95,.45,.97,cloth,0,-.35,0);
-   armor(part.sp,.48,.13,1.02,metal,0,-.19,0);
-  }else{
-   armor(part.sp,.86,.12,.92,metal,0,-.48,0);
-  }
-  if(a%5===0||a%5===2){
-   const pa=new (T().Mesh)(new (T().CylinderGeometry)(.34,.47,.27,6),mat(metal,.32));
-   pa.rotation.z=Math.PI/2;pa.position.set(side*.2,-.22,0);part.sp.add(pa);
-  }
-  if(a%3===1)box(lp.hp,.1,.58,.1,metal,side*.39,-.82,.43);
- }
- // Separate shoulder insignia, chest badges, collar, waist harness and side utility gear.
- armor(torso,1.52,.14,1.04,cloth,0,1.52,0);
- armor(torso,.64,.17,.1,metal,0,1.28,.53);
- armor(hips,1.9,.16,1.03,look.shoe,0,.2,0);
- armor(hips,.46,.23,.14,metal,0,.22,.54);
- if(a%4===0){for(const side of [-1,1])armor(torso,.22,1.17,.09,metal,side*.53,.79,.54)}
- if(a%4===1){armor(torso,1.35,.47,.09,cloth,0,1.08,.54);armor(torso,.47,.45,.11,metal,0,1.06,.61)}
- if(a%4===2){armor(torso,.22,1.45,.1,metal,-.35,.83,.55);armor(torso,.22,1.45,.1,metal,.35,.83,.55)}
- if(a%4===3){armor(torso,1.56,.1,.1,metal,0,.65,.56);armor(torso,.11,.8,.1,metal,0,.95,.56)}
- // Lightweight scarf or coat tails hang off torso and hips without interfering with leg swings.
- if(a===2||a===7||a===12||a===17){armor(torso,1.17,.22,1.09,accent,0,1.56,0);armor(torso,.36,.85,.09,accent,-.46,.18,-.53)}
- if(a===5||a===10||a===15||a===19){for(const side of [-1,1])armor(hips,.3,.83,.08,cloth,side*.72,-.43,-.49)}
- // Different head silhouettes: swept hair, visor, band, circlet, goggles or crown.
- if(a%5===0){armor(head,1.12,.22,1.1,look.hair,0,.53,0);armor(head,.56,.16,.27,look.hair,-.24,.38,.5)}
- if(a%5===1){armor(head,1.15,.19,1.16,metal,0,.49,0);armor(head,1.08,.14,.12,look.shoe,0,.22,.54)}
- if(a%5===2){armor(head,1.14,.13,1.12,accent,0,.39,0);armor(head,.33,.22,.08,metal,0,.41,.59)}
- if(a%5===3){for(const side of [-1,1])armor(head,.32,.21,.09,metal,side*.3,.13,.55)}
- if(a%5===4){armor(head,1.18,.2,1.12,look.hair,0,.51,0);armor(head,.19,.24,.22,accent,.41,.41,.39)}
- // Fabric seams, jacket edges and layered belt details remain shallow to avoid clipping animations.
- for(const side of [-1,1]){strip(side*.83,.82,.035,1.5,detail);box(hips,.42,.09,.07,detail,side*.54,.18,.49)}
- if(a%3===0){box(torso,.6,.18,.06,bright,0,.34,.55);box(torso,.35,.06,.06,detail,0,.48,.56)}
- const fg=side=>{const m=new (T().Mesh)(new (T().BoxGeometry)(.86,.85,.9),new (T().MeshStandardMaterial)({color:glow||0xffffff,emissive:glow||0xffffff,emissiveIntensity:.8,transparent:true,opacity:.75}));m.position.y=-.85;m.visible=false;side.el.add(m);return m};
+ // The head is a vertically oriented cylinder with softened rim edges, resting directly on the torso.
+ const neck=piv(0,1,0,torso),head=piv(0,.53,0,neck);
+ const cylinder=new three.CylinderGeometry(.58,.58,1.06,24,1,false);
+ const pos=cylinder.attributes.position;for(let i=0;i<pos.count;i++){const y=pos.getY(i),radius=Math.hypot(pos.getX(i),pos.getZ(i));if(radius>.01&&Math.abs(y)>.38){const k=1-(Math.abs(y)-.38)*.23;pos.setX(i,pos.getX(i)*k);pos.setZ(i,pos.getZ(i)*k)}}cylinder.computeVertexNormals();
+ part(head,cylinder,skin,0,0,0);
+ const fg=side=>{const mesh=new three.Mesh(box(.86,.85,.9),new three.MeshStandardMaterial({color:glow||0xffffff,emissive:glow||0xffffff,emissiveIntensity:.7,transparent:true,opacity:.75}));mesh.position.y=-1;mesh.visible=false;side.sp.add(mesh);return mesh};
  return{g,root,hips,torso,neck,head,L,R,LL,RL,glow:[fg(L),fg(R)],cur:{},look,chest,face:null,sway:[],ex:0};
 }
+
 function build(look,glow){
  if(look.r6!==false)return buildR6(look,glow);
  const g=new (T().Group)(),root=piv(0,0,0,g);
@@ -354,21 +279,19 @@ const GUARD=[
  {lax:.1,lao:.35,lab:.3,rax:.1,rao:.35,rab:.3,tx:-.05,hx:.15,llb:.1,rlb:.1}// phantom (loose, arms out)
 ];
 function loco(f,time){
- const st=f.look?f.look.style:0,arch=f.look?f.look.arch:0,G=GUARD[st],p=f.ph||0,s=Math.sin(p),c=Math.cos(p);
- if(f.anState==="stun"){const w=Math.sin(time*25+arch)*.12;return{tx:-.32,hx:-.38+w,hy:w*.8,lax:.25+w,lao:.35,rax:.15-w,rao:.35,lab:.5,rab:.4,llb:.4,rlb:.3,y:-.13,rz:w*.9,ty:w*.7}};
- if(f.anState==="ragdoll")return{rx:-1.35+(f.spin||0),lax:-2.6,lao:.6,rax:-2.6,rao:.6,llx:-.4,llo:.3,rlx:.2,rlo:.3,hx:-.4,y:-1.3};
- if(f.anState==="down")return{rx:-1.5,lax:-2.8,lao:.3,rax:-2.8,rao:.3,llo:.15,rlo:.15,y:-1.7};
- if(f.anState==="stun"){const w=Math.sin(time*18)*.06;return{tx:-.35,hx:-.45+w,lax:.2,lao:.35,rax:.25,rao:.35,lab:.3,rab:.3,llb:.35,rlb:.2,y:-.15,rz:w}}
- if(f.anState==="block")return{lax:-1.45,lao:-.55,lab:1.9,rax:-1.45,rao:-.55,rab:1.9,tx:.2,hx:.15,llx:-.3,rlx:.3,llb:.5,rlb:.5,y:-.3};
- if(f.anState==="carry"){const w=f.mv?s:0;return{lax:-2.95,lao:.15,lab:.35,rax:-2.95,rao:.15,rab:.35,tx:-.05,llx:w*.5,rlx:-w*.5,llb:Math.max(0,-c)*.6,rlb:Math.max(0,c)*.6}}
- if(f.anState==="air"){const up=f.vy>0;return{lax:-.6,lao:.5,lab:.8,rax:-.4,rao:.5,rab:.8,llx:-.7,llb:up?1.3:.5,rlx:.2,rlb:up?.9:.3,tx:.1}}
- if(f.anState==="run"){
-  if(st===2||st===4)return{tx:.75,hx:-.45,lax:1.25,lao:.15,lab:.15,rax:1.25,rao:.15,rab:.15,llx:s*1.25,rlx:-s*1.25,llb:Math.max(0,-c)*1.6+.2,rlb:Math.max(0,c)*1.6+.2,y:-.25+Math.abs(c)*.18};// arms-back sprint
-  return{tx:.38,hx:-.2,ty:s*.12,lax:-s*1.25-.15,lab:1.5,rax:s*1.25-.15,rab:1.5,llx:s*1.2,rlx:-s*1.2,llb:Math.max(0,-c)*1.5+.15,rlb:Math.max(0,c)*1.5+.15,y:-.15+Math.abs(c)*.2};
- }
- if(f.anState==="walk"){const g=mix(G,{},.5);return Object.assign(g,{tx:.1,ty:s*.08,lax:(G.lax||0)*.4-s*.55,rax:(G.rax||0)*.4+s*.55,llx:s*.7,rlx:-s*.7,llb:Math.max(0,-c)*.8,rlb:Math.max(0,c)*.8,llo:0,rlo:0,y:Math.abs(c)*.08-.03})}
- const b=Math.sin(time*2.2)*.04;return Object.assign({},G,{y:(G.y||0)+b,tx:(G.tx||0)+b*.5});
+ // Classic R6: upright T-stance at rest; arms and legs rotate as solid blocks.
+ const p=f.ph||0,s=Math.sin(p),c=Math.cos(p);
+ if(f.anState==="stun")return{tx:-.18,hx:.12,lax:-.4,rax:.35,llx:-.16,rlx:.18};
+ if(f.anState==="ragdoll")return{rx:-1.2,lax:-1.5,rax:-1.5,llx:-.25,rlx:.3,y:-.8};
+ if(f.anState==="down")return{rx:-1.45,lax:-1.2,rax:-1.2,y:-1.2};
+ if(f.anState==="block")return{lax:-1.2,rax:-1.2,lao:-.3,rao:-.3};
+ if(f.anState==="carry")return{lax:-1.4,rax:-1.4,llx:s*.48,rlx:-s*.48};
+ if(f.anState==="air")return{lax:-.45,rax:-.45,llx:-.25,rlx:.22};
+ if(f.anState==="run")return{lax:-s*.95,rax:s*.95,llx:s*.95,rlx:-s*.95,tx:.09};
+ if(f.anState==="walk")return{lax:-s*.62,rax:s*.62,llx:s*.62,rlx:-s*.62};
+ return{};
 }
+
 // ---------- action animations ----------
 // M1 sets: 4 hits per style
 const P=(o)=>o;
@@ -451,13 +374,6 @@ function update(f,dt,time){
  if(R.sway.length){const sp=Math.min(30,Math.hypot(f.vx||0,f.vz||0)),up=(f.vy||0)>0?0:Math.min(.6,-(f.vy||0)*.02);
   for(const c of R.sway)c.segs.forEach((s,i)=>{s.rotation.x=(i?.06:c.ang)+sp*(i?.012:.035)+up*(i?.2:.6)+Math.sin(time*3.2+i*.9+(f.x||0)*.1)*(.04+sp*.003)})}
  let pose=loco(f,time);
- if(f.anState==="idle"||f.anState==="free"||!f.anState){
-  const a=f.look?f.look.arch:0,phase=time*1.45+a*.37;
-  pose=Object.assign({},pose,{ty:(pose.ty||0)+Math.sin(phase)*.025,
-   hx:(pose.hx||0)+Math.sin(phase*.72)*.025,
-   y:(pose.y||0)+Math.sin(phase*1.3)*.025});
- }
-
  if(f.act){f.act.t+=dt/f.act.dur;if(f.act.t>=1&&!f.act.hold)f.act=null;else pose=mix(pose,sample(f.act.keys,Math.min(1,f.act.t)),Math.min(1,f.act.t*8+.4))}
  const c=f.rig.cur,k=1-Math.exp(-dt*(f.act?34:19));
  for(const key of KEYS){const v=pose[key]||0;c[key]=c[key]===undefined?v:c[key]+(v-c[key])*k}
@@ -468,10 +384,10 @@ function update(f,dt,time){
 function apply(r,c){
  r.root.position.y=c.y;r.root.rotation.set(c.rx,c.ry,c.rz);
  r.torso.rotation.set(c.tx,c.ty,c.tz);r.neck.rotation.set(c.hx,c.hy,0);
- r.L.sp.rotation.set(c.lax,0,c.lao);r.L.el.rotation.x=-c.lab;
- r.R.sp.rotation.set(c.rax,0,-c.rao);r.R.el.rotation.x=-c.rab;
- r.LL.hp.rotation.set(c.llx,0,c.llo);r.LL.kn.rotation.x=c.llb;
- r.RL.hp.rotation.set(c.rlx,0,-c.rlo);r.RL.kn.rotation.x=c.rlb;
+ r.L.sp.rotation.set(c.lax,0,c.lao);r.L.el.rotation.x=0;
+ r.R.sp.rotation.set(c.rax,0,-c.rao);r.R.el.rotation.x=0;
+ r.LL.hp.rotation.set(c.llx,0,c.llo);r.LL.kn.rotation.x=0;
+ r.RL.hp.rotation.set(c.rlx,0,-c.rlo);r.RL.kn.rotation.x=0;
  // keep feet near the ground when crouching (y<0 lowers the hips)
  r.hips.position.y=2.05+Math.min(0,c.y)*.0;
 }

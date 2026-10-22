@@ -154,6 +154,7 @@ $("selfCoinBtn").onclick=()=>{P.coins+=Number($("selfAmt").value)||0;hdr();save(
 $("selfUnlock").onclick=()=>{P.chars=DT.CH.filter(c=>!c.ex||P.role==="mega").map(c=>c.id);P.weapons=DT.WP.filter(w=>!w.ex||P.role==="mega").map(w=>w.id);P.skins=DT.SKINS.map((x,i)=>i);hdr();save();toast("Everything unlocked")};
 $("plRef").onclick=megaList;$("psearch").onkeydown=e=>{if(e.key==="Enter")megaList()};$("admClose").onclick=closeAdmin;$("logRef").onclick=loadLog;document.querySelectorAll(".admTabs button").forEach(b=>b.onclick=()=>admTab(b.dataset.at));
 $("insaneTg").onclick=()=>{P.on=P.on||{};P.on.insane=!P.on.insane;save();admin();toast(P.on.insane?"SUPER INSANE MODE ON":"Super Insane Mode off");if(window.Game&&Game.active&&Game.refresh)Game.refresh()};
+$("testBotBtn").onclick=async()=>{try{const result=await B.testBot();toast("Test bot: login "+result.loginTest+", profile "+result.profileTest);megaList()}catch(e){toast(e.message||"Test failed")}};
 $("cfgSave").onclick=async()=>{const v={announce:$("cfgNews").value.trim(),coinMult:Math.max(0,Number($("cfgCoin").value)||1),bagMult:Math.max(0,Number($("cfgBag").value)||1),botHp:Math.max(.1,Number($("cfgBot").value)||1)};const ok=await B.setConfig(v);if(ok){CFG=v;$("news").textContent=v.announce}toast(ok?"Live settings saved - players get them on next load":"Save failed")};
 addEventListener("beforeunload",()=>{if(P)save()});
 // phone/browser Back: leave the arena or close the admin overlay instead of leaving the site

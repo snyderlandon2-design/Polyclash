@@ -388,7 +388,19 @@ const A={
  finisher:[[0,{lax:-3.0,rax:-3.0,lab:.2,rab:.2,y:.4,tx:-.3}],[.4,{lax:-3.0,rax:-3.0,lab:.2,rab:.2,y:.5,tx:-.35}],[.6,{lax:-1.5,rax:-1.5,lab:0,rab:0,tx:.6,y:-.3,llx:-.6,rlx:.5}],[1,{lax:-1.2,rax:-1.2,tx:.3}]]
 };
 function play(f,name,dur,keysOverride){f.act={keys:keysOverride||A[name]||A.thrust,t:0,dur:dur||.4,name};}
-function m1Keys(f,i){return M1[f.look?f.look.style:0][i%4]}
+function m1Keys(f,i){
+ const style=f.look?f.look.style:0,arch=f.look?f.look.arch:0,base=M1[style][i%4];
+ // Each archetype changes its weight shift, lead side and attack silhouette.
+ const lean=((arch%5)-2)*.085,side=arch%2?-1:1;
+ return base.map(([t,p])=>[t,Object.assign({},p,{
+  ty:(p.ty||0)+lean*(t>.2&&t<.8?1.8:.45),
+  tx:(p.tx||0)+(arch%4===0?.13:arch%4===1?-.1:0)*(t>.2&&t<.8?1:0),
+  tz:(p.tz||0)+side*.065*(t>.2&&t<.8?1:0),
+  hx:(p.hx||0)-(arch%3)*.045,
+  llx:(p.llx||0)+(arch%3-1)*.1,
+  rlx:(p.rlx||0)-(arch%3-1)*.1
+ })]);
+}
 function update(f,dt,time){
  const R=f.rig;
  // facial expression: hurt when stunned/knocked, fierce while attacking
@@ -397,6 +409,13 @@ function update(f,dt,time){
  if(R.sway.length){const sp=Math.min(30,Math.hypot(f.vx||0,f.vz||0)),up=(f.vy||0)>0?0:Math.min(.6,-(f.vy||0)*.02);
   for(const c of R.sway)c.segs.forEach((s,i)=>{s.rotation.x=(i?.06:c.ang)+sp*(i?.012:.035)+up*(i?.2:.6)+Math.sin(time*3.2+i*.9+(f.x||0)*.1)*(.04+sp*.003)})}
  let pose=loco(f,time);
+ if(f.anState==="idle"||f.anState==="free"||!f.anState){
+  const a=f.look?f.look.arch:0,phase=time*1.45+a*.37;
+  pose=Object.assign({},pose,{ty:(pose.ty||0)+Math.sin(phase)*.025,
+   hx:(pose.hx||0)+Math.sin(phase*.72)*.025,
+   y:(pose.y||0)+Math.sin(phase*1.3)*.025});
+ }
+
  if(f.act){f.act.t+=dt/f.act.dur;if(f.act.t>=1&&!f.act.hold)f.act=null;else pose=mix(pose,sample(f.act.keys,Math.min(1,f.act.t)),Math.min(1,f.act.t*8+.4))}
  const c=f.rig.cur,k=1-Math.exp(-dt*(f.act?34:19));
  for(const key of KEYS){const v=pose[key]||0;c[key]=c[key]===undefined?v:c[key]+(v-c[key])*k}

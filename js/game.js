@@ -11,7 +11,7 @@ let me=null;const bots=[],rem=new Map(),proj=[],hazards=[],walls=[];
 let yaw=0,pitch=.32,dist=13,keys={},md=0,joy={x:0,z:0},jumpHeld=false,camT=null,fovKick=0;
 let combo={n:0,t:0},tgt=null,tgtT=0,spT=0,bt=0,ct=0,hudT=0,KITS=null;
 let training={lvl:3,auto:true},host=false,ultCD=0,botSeq=0,bst=0;
-const insaneActive=()=>!!(window.App&&App.insane&&App.insane())&&(mode==="grind"||mode==="personal"||(mode==="online"&&host));
+const insaneActive=()=>!!(window.App&&App.insane&&App.insane());
 const canTrain=()=>mode==="grind"||mode==="personal"||(mode==="online"&&host);
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const TOUCH="ontouchstart" in window;

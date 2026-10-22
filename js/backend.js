@@ -26,6 +26,7 @@ async function cload(){
  return applyGrants(p);
 }
 const API={cloud,sb,
+async onlineIds(){if(!cloud)return new Set();const {data,error}=await sb.from("player_presence").select("user_id,last_seen").gte("last_seen",new Date(Date.now()-65000).toISOString());if(error)throw error;return new Set((data||[]).map(x=>x.user_id))},
 async testBot(){if(!cloud)throw Error("Online account required");const {data:{session}}=await sb.auth.getSession();if(!session)throw Error("Sign in again");const r=await fetch(C.SUPABASE_URL+"/functions/v1/owner-test-bot",{method:"POST",headers:{"Content-Type":"application/json","apikey":C.SUPABASE_ANON_KEY,"Authorization":"Bearer "+session.access_token},body:"{}"});const data=await r.json();if(!r.ok)throw Error(data.error||"Test failed");return data},
 async deleteAccount(id){if(!cloud)throw Error("Online account required");const {data:{session}}=await sb.auth.getSession();if(!session)throw Error("Sign in again");const r=await fetch(C.SUPABASE_URL+"/functions/v1/owner-delete-account",{method:"POST",headers:{"Content-Type":"application/json","apikey":C.SUPABASE_ANON_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({target:id})});const data=await r.json();if(!r.ok||!data.deleted)throw Error(data.error||"Could not delete account");return data},
 async signUp(u,p){const e=bad(u,p);if(e)return{error:e};

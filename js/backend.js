@@ -47,10 +47,10 @@ async save(p){
  if(cloud){await sb.from("profiles").update({coins:p.coins,wins:p.wins,kills:p.kills,xp:p.xp,data:{chars:p.chars,weapons:p.weapons,char:p.char,weapon:p.weapon,skins:p.skins,skin:p.skin,lv:p.lv,moveSlots:p.moveSlots||{},on:p.on}}).eq("id",p.id);return}
  const a=get("pc_acc")||{},k=p.username.toLowerCase();if(a[k]){a[k].p=p;set("pc_acc",a)}},
 async board(cat){let rows;
- if(cloud){const {data}=await sb.from("profiles").select("username,coins,wins,kills,xp,data").order(cat==="coins"?"coins":cat==="kills"?"kills":"wins",{ascending:false}).limit(100);rows=(data||[]).map(r=>({username:r.username,coins:r.coins,wins:r.wins,kills:r.kills,xp:r.xp,n:((r.data&&r.data.chars)||[]).length}))}
+ if(cloud){const {data}=await sb.from("profiles").select("id,username,coins,wins,kills,xp,data").order(cat==="coins"?"coins":cat==="kills"?"kills":"wins",{ascending:false}).limit(100);rows=(data||[]).map(r=>({id:r.id,username:r.username,coins:r.coins,wins:r.wins,kills:r.kills,xp:r.xp,n:((r.data&&r.data.chars)||[]).length}))}
  else rows=Object.values(get("pc_acc")||{}).map(a=>({username:a.p.username,coins:a.p.coins,wins:a.p.wins,kills:a.p.kills,xp:a.p.xp,n:a.p.chars.length}));
  const f={wins:r=>r.wins,kills:r=>r.kills,coins:r=>r.coins,collection:r=>r.n,level:r=>1+Math.floor(Math.sqrt(r.xp/100))};
- return rows.map(r=>({username:r.username,val:f[cat](r)})).sort((a,b)=>b.val-a.val).slice(0,20)},
+ return rows.map(r=>({id:r.id||null,username:r.username,val:f[cat](r)})).sort((a,b)=>b.val-a.val).slice(0,20)},
 async adminList(q){
  if(cloud){let r=sb.from("profiles").select("id,username,coins").order("created_at",{ascending:false}).limit(100);if(q)r=r.ilike("username","%"+q+"%");const {data}=await r;const {data:ro}=await sb.from("admin_roles").select("user_id,role,powers");const m={};(ro||[]).forEach(x=>m[x.user_id]=x);
   return(data||[]).map(x=>({username:x.username,coins:x.coins,role:m[x.id]?(m[x.id].role==="owner"?"mega":m[x.id].role):"player",powers:m[x.id]?(m[x.id].powers||{}):{}}))}

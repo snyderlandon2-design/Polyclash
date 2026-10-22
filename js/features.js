@@ -2,6 +2,10 @@
 (()=>{"use strict";
 const $=id=>document.getElementById(id),D=()=>window.DATA,P=()=>window.App?.P?.(),esc=s=>String(s).replace(/[&<>"']/g,c=>"&#"+c.charCodeAt(0)+";");
 let aiMode="chat",history=[];
+const day=86400000;
+const cycle=()=>Math.floor(Date.now()/day);
+const remaining=()=>{let n=(cycle()+1)*day-Date.now();return [Math.floor(n/3600000),Math.floor(n%3600000/60000),Math.floor(n%60000/1000)].map(x=>String(x).padStart(2,"0")).join(":")};
+function timer(){const e=$("shopCountdown");if(e)e.textContent="Featured shop refreshes in "+remaining()+" (UTC midnight)";if(cycle()!==timer.last){timer.last=cycle();if($("shopScreen")?.classList.contains("on"))shop()}}
 function aiOwner(){return P()?.role==="mega"&&!P()?.guest}
 function shop(){
  const p=P();if(!p)return;
@@ -14,6 +18,8 @@ function shop(){
   ["Emotes",["Wave","Cheer","Dance","Bow","Victory Pose"].map((name,i)=>({id:i,name,rar:i===4?5:i,price:250+i*125,field:"emotes"}))]
  ];
  const target=$("featuredShop");if(!target)return;
+ // Every player receives the same UTC-day selection. Rotates item IDs daily without changing item definitions.
+ for(const [,items] of categories){if(items.length>1){const offset=cycle()%items.length;items.push(...items.splice(0,offset))}}
  target.innerHTML=categories.map(([name,items])=>'<h4>'+name+'</h4><div class="bags">'+items.map(x=>'<button class="bag" data-field="'+x.field+'" data-id="'+x.id+'"><b>'+esc(x.name)+'</b><small>'+((p[x.field]||[]).includes(x.id)?"OWNED":x.price+" coins")+'</small></button>').join("")+'</div>').join("");
  target.querySelectorAll("button").forEach(btn=>btn.onclick=async()=>{
   const field=btn.dataset.field,id=+btn.dataset.id,entry=categories.flatMap(c=>c[1]).find(x=>x.field===field&&x.id===id);
@@ -38,6 +44,16 @@ function shop(){
 }
 function aiSetup(){
  const send=$("aiSend");if(!send)return;
+ const runCommand=async(message)=>{
+  const coin=message.match(/^(?:give|add)\s+(?:user(?:name)?\s+)?([a-z0-9_]{2,24})\s+(\d{1,9})\s+coins?$/i)||message.match(/^(?:give|add)\s+(\d{1,9})\s+coins?\s+to\s+([a-z0-9_]{2,24})$/i);
+  if(coin){const first=/^\d+$/.test(coin[1]),username=first?coin[2]:coin[1],amount=Number(first?coin[1]:coin[2]);if(amount<1||amount>1000000)return "Choose 1 to 1,000,000 coins per command.";
+   const found=await Backend.aFind(username),player=found.find(x=>x.username.toLowerCase()===username.toLowerCase());if(!player)return "No exact username match: "+username+". Nothing changed.";
+   if(!confirm("Give "+player.username+" "+amount.toLocaleString()+" coins?"))return "Cancelled. Nothing changed.";
+   await Backend.aCoins(player.id,amount);return "Done: added "+amount.toLocaleString()+" coins to "+player.username+". The server recorded this admin action.";
+  }
+  if(/\b(?:replace|swap|change|shop|item)\b/i.test(message))return "Shop edits need a shared server-side catalog so all players see the same change. No shop item was changed. Specify the category, current item, and replacement item.";
+  return "I only handle specific game commands. Try: Give Landon2 500 coins, or: Replace [item] with [item] in the shop. I will not answer unrelated questions or make random changes.";
+ };
  const paint=()=>{$("aiHistory").innerHTML=history.map(m=>'<p><b>'+ (m.role==="user"?"YOU":"AI")+'</b>: '+esc(m.content)+'</p>').join("");$("aiHistory").scrollTop=$("aiHistory").scrollHeight};
  for(const [id,mode] of [["aiModeChat","chat"],["aiModeAdd","add"]])$(id).onclick=()=>{aiMode=mode;App.toast(mode==="add"?"Feature proposal mode — approval required":"AI chat mode")};
  send.onclick=async()=>{
@@ -45,6 +61,7 @@ function aiSetup(){
   const input=$("aiPrompt"),message=input.value.trim();if(!message)return;
   input.value="";const prior=history.slice(-8);history.push({role:"user",content:message});paint();send.disabled=true;
   try{
+   if(aiMode==="add"){history.push({role:"assistant",content:await runCommand(message)});send.disabled=false;paint();return}
    const session=await window.Backend.sb.auth.getSession(),jwt=session.data.session?.access_token;
    if(!jwt)throw Error("Sign in to your online owner account");
    const base=window.PC_CONFIG.SUPABASE_URL;
@@ -56,7 +73,7 @@ function aiSetup(){
  };
 }
 function init(){
- aiSetup();const btn=$("aiDevBtn");if(btn)btn.classList.toggle("hide",!aiOwner());
+ aiSetup();timer();setInterval(timer,1000);const btn=$("aiDevBtn");if(btn)btn.classList.toggle("hide",!aiOwner());
  const obs=new MutationObserver(()=>{if($("shopScreen")?.classList.contains("on"))shop();if(btn)btn.classList.toggle("hide",!aiOwner());});
  obs.observe(document.body,{subtree:true,attributes:true,attributeFilter:["class"]});
 }

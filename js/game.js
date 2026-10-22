@@ -357,9 +357,9 @@ function onHit(p){
  if(!me)return;
  if(p.to!==myId){// a hit on one of my bots (private server host)
   if(p.k)return;const b=bots.find(x=>x.bid===p.to);if(b&&!b.dead){const src=rem.get(p.by)||{x:p.ax,z:p.az,rid:p.by};receive(b,Object.assign({},src,{rid:p.by,x:p.ax,z:p.az}),p.h||{dmg:5,kind:"light"})}return}
- if(p.k){if(mode==="duel"&&!p.bot&&!duelScore.finished){duelScore.mine++;duelUpdate()}if(p.bot){window.App.reward({coins:p.c||30,xp:p.xp||15,kills:1});feed("Bot KO! +"+(p.c||30)+" coins")}else{window.App.reward({coins:100,xp:40,wins:1});feed("KO! +100 coins")}FX.banner("K.O.","#ffd54a");return}
+ if(p.k){if(mode==="duel"&&!p.bot&&!duelScore.finished){duelScore.mine++;duelUpdate()}if(p.bot){window.App.reward({coins:p.c||30,xp:p.xp||15,kills:1});feed("Bot KO! +"+(p.c||30)+" coins")}else if(mode==="duel"){feed("DUEL K.O. · "+duelScore.mine+"/5")}else{window.App.reward({coins:100,xp:40,wins:1});feed("KO! +100 coins")}FX.banner("K.O.","#ffd54a");return}
  me.lastBy=p.by;const src=rem.get(p.by)||{x:p.ax,z:p.az,rid:p.by};receive(me,Object.assign({},src,{rid:p.by,x:p.ax,z:p.az}),p.h||{dmg:5,kind:"light"})}
-function duelUpdate(){if(mode!=="duel")return;const text="DUEL · YOU "+duelScore.mine+" : "+duelScore.theirs+" OPPONENT";$("arena").textContent=text;if(duelScore.mine>=5||duelScore.theirs>=5){duelScore.finished=true;FX.banner(duelScore.mine>=5?"DUEL VICTORY!":"DUEL DEFEAT",duelScore.mine>=5?"#ffd54a":"#ff5050");feed("First to 5 KOs reached. Return HOME to leave match.")}}
+function duelUpdate(){if(mode!=="duel")return;const text="DUEL · YOU "+duelScore.mine+" : "+duelScore.theirs+" OPPONENT";$("arena").textContent=text;if(duelScore.mine>=5||duelScore.theirs>=5){duelScore.finished=true;if(duelScore.mine>=5)window.App.reward({coins:250,xp:100,wins:1});FX.banner(duelScore.mine>=5?"DUEL VICTORY!":"DUEL DEFEAT",duelScore.mine>=5?"#ffd54a":"#ff5050");feed("First to 5 KOs reached. Return HOME to leave match.")}}
 function onLeave(k){for(const [id,r] of rem)if(id===k||id.indexOf(k)===0){removeFighter(r);rem.delete(id)}}
 // ---------- HUD ----------
 function feed(t){$("feed").textContent=t;clearTimeout(feed.t);feed.t=setTimeout(()=>{$("feed").textContent=""},2500)}

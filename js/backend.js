@@ -15,7 +15,7 @@ function applyGrants(p){const g=p.grants||[];p.xChars=g.filter(x=>x.kind==="char
  return p}
 const banText=b=>"This account is "+(b.until?"timed out until "+new Date(b.until).toLocaleString():"banned")+(b.reason?" - "+b.reason:"");
 const bad=(u,p)=>!/^[a-z0-9_]{3,16}$/i.test(u)?"Username: 3-16 letters, numbers or _":(p.length<6?"Password must be 6+ characters":null);
-const email=u=>u.toLowerCase()+"@polyclash-players.com";
+const usernameAuth=async(action,username,password)=>{const res=await fetch(C.SUPABASE_URL+"/functions/v1/username-auth",{method:"POST",headers:{"Content-Type":"application/json","apikey":C.SUPABASE_ANON_KEY},body:JSON.stringify({action,username,password})});const body=await res.json();if(!res.ok||body.error)throw Error(body.error||"Authentication failed");return body};
 async function sha(s){try{const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("pc:"+s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("")}catch(e){let h=5381;for(const c of s)h=((h*33)^c.charCodeAt(0))>>>0;return"x"+h}}
 async function cload(){
  const {data:{user}}=await sb.auth.getUser();if(!user)return null;
@@ -27,12 +27,12 @@ async function cload(){
 }
 const API={cloud,
 async signUp(u,p){const e=bad(u,p);if(e)return{error:e};
- if(cloud){const {data,error}=await sb.auth.signUp({email:email(u),password:p,options:{data:{username:u}}});if(error)return{error:error.message||"Could not create account"};if(!data.session)return{error:"Account created. Email confirmation must be disabled for username-only accounts in Supabase Auth settings before signing in."};const pr=await cload();return pr?{p:pr}:{error:"Account created, but profile is still loading. Try signing in."}}
+ if(cloud){try{await usernameAuth("signup",u,p);return API.signIn(u,p)}catch(e){return{error:e.message||"Could not create account"}}}
  const a=get("pc_acc")||{},k=u.toLowerCase();if(a[k])return{error:"Username taken on this device"};
  const pr=blank(u);if(u.toLowerCase()===String(C.LOCAL_MEGA_USERNAME||"").toLowerCase())pr.role="mega";
  a[k]={pw:await sha(p),p:pr};set("pc_acc",a);set("pc_sess",k);return{p:pr}},
 async signIn(u,p){
- if(cloud){if(!u||!p)return{error:"Enter your username and password"};const {error}=await sb.auth.signInWithPassword({email:email(u),password:p});if(error)return{error:/invalid login|invalid_credentials/i.test(error.message+" "+(error.code||""))?"Wrong username or password":"Login failed: "+error.message};const pr=await cload();if(pr&&pr.ban){await sb.auth.signOut();return{error:banText(pr.ban)}}return pr?{p:pr}:{error:"Profile not found"}}
+ if(cloud){if(!u||!p)return{error:"Enter your username and password"};try{const result=await usernameAuth("login",u,p);const {error}=await sb.auth.setSession({access_token:result.session.access_token,refresh_token:result.session.refresh_token});if(error)throw error}catch(e){return{error:e.message||"Login failed"}};const pr=await cload();if(pr&&pr.ban){await sb.auth.signOut();return{error:banText(pr.ban)}}return pr?{p:pr}:{error:"Profile not found"}}
  const a=get("pc_acc")||{},k=u.toLowerCase();if(!a[k]||a[k].pw!==await sha(p))return{error:"Wrong username or password"};const lp=a[k].p;if(lp.ban&&(!lp.ban.until||new Date(lp.ban.until)>new Date()))return{error:banText(lp.ban)};set("pc_sess",k);lp.grants=(lp.grants||[]).filter(g=>!g.until||new Date(g.until)>new Date());return{p:applyGrants(fix(lp))}},
 async session(){
  if(cloud){const {data:{session}}=await sb.auth.getSession();if(!session)return null;const pr=await cload();if(pr&&pr.ban){await sb.auth.signOut();window.App&&App.toast(banText(pr.ban));return null}return pr}

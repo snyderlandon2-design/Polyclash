@@ -67,7 +67,7 @@ function build(sc,q){scene=sc;low=!!q.low;B.length=0;props.length=0;debris.lengt
  for(let n=-116;n<=116;n+=8){const line=mesh(new (T().PlaneGeometry)(.045,232),edge,n,.043,0);line.rotation.x=-Math.PI/2;line.castShadow=false;const cross=mesh(new (T().PlaneGeometry)(232,.045),edge,0,.044,n);cross.rotation.x=-Math.PI/2;cross.castShadow=false}
  const park=mesh(new (T().PlaneGeometry)(HALF*2,HALF*2),grass,0,.012,0);park.rotation.x=-Math.PI/2;park.castShadow=false;
  // Buildings occupy only the far perimeter, preserving a generous central arena.
- for(const x of [-147,-126,126,147])for(const z of [-147,-126,126,147]){
+ if(!q.duel)for(const x of [-147,-126,126,147])for(const z of [-147,-126,126,147]){
   if(Math.abs(x)===126&&Math.abs(z)===126)continue;
   building(x,z,14,14,rnd(18,42));
  }

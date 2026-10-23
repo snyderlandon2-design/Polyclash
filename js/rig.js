@@ -279,17 +279,22 @@ const GUARD=[
  {lax:.1,lao:.35,lab:.3,rax:.1,rao:.35,rab:.3,tx:-.05,hx:.15,llb:.1,rlb:.1}// phantom (loose, arms out)
 ];
 function loco(f,time){
- // Classic R6: upright T-stance at rest; arms and legs rotate as solid blocks.
- const p=f.ph||0,s=Math.sin(p),c=Math.cos(p);
- if(f.anState==="stun")return{tx:-.18,hx:.12,lax:-.4,rax:.35,llx:-.16,rlx:.18};
- if(f.anState==="ragdoll")return{rx:-1.2,lax:-1.5,rax:-1.5,llx:-.25,rlx:.3,y:-.8};
- if(f.anState==="down")return{rx:-1.45,lax:-1.2,rax:-1.2,y:-1.2};
- if(f.anState==="block")return{lax:-1.2,rax:-1.2,lao:-.3,rao:-.3};
- if(f.anState==="carry")return{lax:-1.4,rax:-1.4,llx:s*.48,rlx:-s*.48};
- if(f.anState==="air")return{lax:-.45,rax:-.45,llx:-.25,rlx:.22};
- if(f.anState==="run")return{lax:-s*.95,rax:s*.95,llx:s*.95,rlx:-s*.95,tx:.09};
- if(f.anState==="walk")return{lax:-s*.62,rax:s*.62,llx:s*.62,rlx:-s*.62};
- return{};
+ // Procedural gait: acceleration, torso counter-rotation, landing compression and arm follow-through.
+ const speed=Math.hypot(f.vx||0,f.vz||0),moving=f.anState==="run"||f.anState==="walk";
+ const phase=f.ph||time*8,step=Math.sin(phase),opposite=Math.sin(phase+Math.PI);
+ const lean=Math.min(.32,speed/85),stride=Math.min(1.12,speed/21);
+ const breathe=Math.sin(time*2.1+(f.isBot?2:0))*.018;
+ if(f.anState==="stun")return{tx:-.18,hx:.12,lax:-.55,rax:.3,llx:-.16,rlx:.18,ty:Math.sin(time*17)*.09};
+ if(f.anState==="ragdoll")return{rx:-1.32,lax:-1.6,rax:-1.45,llx:-.55,rlx:.42,y:.25,ty:Math.sin(time*8)*.08};
+ if(f.anState==="down")return{rx:-1.45,lax:-1.25,rax:-1.15,y:.2};
+ if(f.anState==="block")return{tx:-.14,lax:-1.55,rax:-1.5,lao:-.35,rao:-.35,llx:-.12,rlx:.15,ty:Math.sin(time*3)*.04};
+ if(f.anState==="carry")return{tx:.12,lax:-1.45,rax:-1.45,llx:step*.5,rlx:opposite*.5};
+ if(f.anState==="air")return{tx:-.14,lax:-.8,rax:-.7,llx:-.5,rlx:.36,lao:.18,rao:.18,ty:.07};
+ if(moving)return{tx:lean+.05,ty:Math.sin(phase)*.085,tz:Math.sin(phase*.5)*.025,hx:-lean*.32,
+  lax:-step*stride*.85-.15,rax:-opposite*stride*.85-.15,lao:.1,rao:.1,
+  llx:step*stride,rlx:opposite*stride,llb:Math.max(0,-step)*.38*stride,rlb:Math.max(0,step)*.38*stride,
+  y:Math.abs(Math.sin(phase))*.085*stride};
+ return{tx:breathe,hx:-breathe*.5,lax:-.07+Math.sin(time*1.5)*.025,rax:-.07-Math.sin(time*1.5)*.025,ty:Math.sin(time*1.7)*.015};
 }
 
 // ---------- action animations ----------
@@ -389,10 +394,10 @@ function apply(r,c){
  r.root.position.y=Math.max(minLift,c.y||0);
  r.root.rotation.set(c.rx,c.ry,c.rz);
  r.torso.rotation.set(c.tx,c.ty,c.tz);r.neck.rotation.set(c.hx,c.hy,0);
- r.L.sp.rotation.set(c.lax,0,c.lao);r.L.el.rotation.x=0;
- r.R.sp.rotation.set(c.rax,0,-c.rao);r.R.el.rotation.x=0;
- r.LL.hp.rotation.set(c.llx,0,c.llo);r.LL.kn.rotation.x=0;
- r.RL.hp.rotation.set(c.rlx,0,-c.rlo);r.RL.kn.rotation.x=0;
+ r.L.sp.rotation.set(c.lax,0,c.lao);r.L.el.rotation.x=c.lab||0;
+ r.R.sp.rotation.set(c.rax,0,-c.rao);r.R.el.rotation.x=c.rab||0;
+ r.LL.hp.rotation.set(c.llx,0,c.llo);r.LL.kn.rotation.x=c.llb||0;
+ r.RL.hp.rotation.set(c.rlx,0,-c.rlo);r.RL.kn.rotation.x=c.rlb||0;
  // keep feet near the ground when crouching (y<0 lowers the hips)
  // Feet at ground: hips at y=2; leg tops at y=2 and torso bottom at y=2.
  r.hips.position.y=2;

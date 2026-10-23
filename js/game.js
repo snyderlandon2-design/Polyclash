@@ -154,13 +154,14 @@ function weaponMove(f){
  if(f.isMe)pushState(true)
 }
 function useMove(f,i){if(!free(f)||f.carry)return false;if(f.cd[i]>0)return false;const mv=f.kitDef.moves[i];if(!mv)return false;f.cd[i]=mv.cd*(f.awT>0?.6:1)*(f.isMe&&insaneActive()?.25:1)/Math.max(.7,f.S.agi||1);if(f.blk)f.blk=false;aim(f);mv.fn(f,K);if(f.isMe)pushState(true);return true}
-function finisher(f){if(!free(f)||f.awT<=0||f.fin)return false;f.fin=true;aim(f);f.inv=1.4;FX.slowmo(.35,.7);FX.banner(f.kitDef.fin.n.toUpperCase(),"#"+f.kitDef.col.toString(16).padStart(6,"0"));f.kitDef.fin.fn(f,K);if(f.isMe)pushState(true);return true}
+function finisher(f){if(f.isMe)closeEmotes();if(!free(f)||f.awT<=0||f.fin)return false;f.fin=true;aim(f);f.inv=1.4;FX.slowmo(.35,.7);FX.banner(f.kitDef.fin.n.toUpperCase(),"#"+f.kitDef.col.toString(16).padStart(6,"0"));f.kitDef.fin.fn(f,K);if(f.isMe)pushState(true);return true}
 function awaken(f){if(!free(f)||f.awk<100||f.awT>0)return false;f.awk=0;f.awT=30;f.fin=false;f.inv=1.1;Rig.play(f,"awaken",1.0);f.lock=.95;
  FX.slowmo(.4,.6);if(f.isMe){FX.banner("AWAKENED","#"+f.kitDef.col.toString(16).padStart(6,"0"));FX.flash("#fff",.6)}
  later(f,.75,()=>{FX.ring(f.x,.3,f.z,f.kitDef.col,22,.7);FX.ring(f.x,3,f.z,0xffffff,14,.5,true,f.r);FX.boom(f.x,2,f.z,f.kitDef.col,6);FX.shake(.8);around(f,f.x,f.z,9,{dmg:6,kind:"knock",kb:34,up:10,col:f.kitDef.col});World.crater(f.x,f.z,5)});
  f.rig.glow.forEach(g=>{g.material=new THREE.MeshStandardMaterial({color:f.kitDef.col,emissive:f.kitDef.col,emissiveIntensity:1.4});g.visible=true});if(f.isMe)pushState(true);return true}
 // ---------- M1 + movement actions ----------
 function m1(f){
+ if(f.isMe){closeEmotes();if(f.act?.name==="emote")f.act=null}
  if(f.carry){if(free(f))throwProp(f);return}
  if(f.dead||f.m1CD>0)return;
  const dashing=f.dashT>0&&f.dashDir==="F";
@@ -372,6 +373,32 @@ function onLeave(k){for(const [id,r] of rem)if(id===k||id.indexOf(k)===0){remove
 // ---------- HUD ----------
 function feed(t){$("feed").textContent=t;clearTimeout(feed.t);feed.t=setTimeout(()=>{$("feed").textContent=""},2500)}
 let mvU=null;
+const EMOTE_POSES=[
+ [[0,{}],[.22,{rax:-2.7,rao:.3,tx:-.1}],[.48,{rax:-2.2,rao:-.3,ty:.2}],[.75,{rax:-2.7,rao:.3,ty:-.2}],[1,{}]],
+ [[0,{}],[.3,{lax:-2.8,rax:-2.8,tx:-.18}],[.7,{lax:-2.8,rax:-2.8,y:.18}],[1,{}]],
+ [[0,{}],[.2,{lax:-1.3,rax:.3,ty:-.5,llx:.6,rlx:-.6}],[.45,{lax:.4,rax:-1.3,ty:.5,llx:-.6,rlx:.6}],[.7,{lax:-1.3,rax:.4,ty:-.5,llx:.6,rlx:-.6}],[1,{}]],
+ [[0,{}],[.4,{tx:.8,lax:.4,rax:.4,ty:.1}],[.8,{tx:.8,lax:.4,rax:.4,ty:-.1}],[1,{}]],
+ [[0,{}],[.25,{lax:-2.9,rax:-2.9,tx:-.3}],[.55,{lax:-2.9,rax:-2.9,tx:-.3,y:.3}],[.8,{lax:-2.9,rax:-2.9,tx:-.3,y:.1}],[1,{}]]
+];
+let emotePanel=null;
+function closeEmotes(){if(emotePanel){emotePanel.remove();emotePanel=null}}
+function playEmote(id){
+ closeEmotes();
+ if(!me||me.dead||me.st!=="free"||me.lock>0)return;
+ const pose=EMOTE_POSES[id%EMOTE_POSES.length];
+ Rig.play(me,"emote",2.6,pose);me.lock=.25;
+ FX.ring(me.x,.15,me.z,0xe6e6f0,3,.38);
+ feed(["WAVE","CHEER","DANCE","BOW","VICTORY"][id%5]);
+}
+function toggleEmotes(){
+ if(emotePanel){closeEmotes();return}
+ const owned=[...new Set([0,...(pf.emotes||[])])].filter(i=>i>=0&&i<5);
+ const names=["Wave","Cheer","Dance","Bow","Victory Pose"];
+ emotePanel=document.createElement("div");emotePanel.id="pcEmoteWheel";
+ Object.assign(emotePanel.style,{position:"fixed",bottom:"135px",left:"50%",transform:"translateX(-50%)",display:"flex",flexWrap:"wrap",justifyContent:"center",gap:"7px",width:"min(440px,90vw)",padding:"12px",border:"1px solid #565963",borderRadius:"14px",background:"#0b0c10ed",zIndex:"200",boxShadow:"0 12px 40px #000b"});
+ for(const id of owned){const b=document.createElement("button");b.textContent=names[id];Object.assign(b.style,{background:"#23252b",border:"1px solid #646770",borderRadius:"8px",padding:"12px",color:"#fff",cursor:"pointer",flex:"1 0 105px"});b.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();playEmote(id)});emotePanel.appendChild(b)}
+ document.body.appendChild(emotePanel);
+}
 function buildMoves(){const k=me.kitDef,h=k.moves.map((m,i)=>'<button class="mv" data-m="'+i+'"><i>'+(i+1)+'</i><b>'+m.n+'</b><span class="cdv"></span></button>').join("")+'<button class="mv weapon" data-m="w"><i>6</i><b>WEAPON SKILL</b><span class="cdv"></span></button>'+'<button class="mv aw" data-m="g"><i>G</i><b>Awaken</b><span class="cdv"></span></button><button class="mv fin" data-m="r"><i>T</i><b>'+k.fin.n+'</b><span class="cdv"></span></button>'+(insaneActive()?'<button class="mv ult" data-m="u"><i>5</i><b>INSANE COMBO</b><span class="cdv"></span></button>':'');
  $("moves").innerHTML=h;$("moves").querySelectorAll(".mv").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();const m=b.dataset.m;if(m==="g")awaken(me);else if(m==="r")finisher(me);else if(m==="u")ultimate();else if(m==="w")weaponMove(me);else useMove(me,+m)}));mvU=$("moves").querySelector(".ult");
  $("hudName").textContent=pf.username+" · "+k.n+" "+(Rig.STYLE_NAMES[me.look.style]||"")}
@@ -392,7 +419,7 @@ function hud(){
 }
 // ---------- main ----------
 function start(o){
- stop();pf=P();mode=o.mode;duelScore={mine:0,theirs:0,finished:false};lvl=o.level||1;host=!!o.host;training={lvl:mode==="grind"?lvl:3,auto:mode==="grind"};ultCD=0;botSeq=0;myId=pf.username+"_"+Math.random().toString(36).slice(2,6);label="";
+ closeEmotes();stop();pf=P();mode=o.mode;duelScore={mine:0,theirs:0,finished:false};lvl=o.level||1;host=!!o.host;training={lvl:mode==="grind"?lvl:3,auto:mode==="grind"};ultCD=0;botSeq=0;myId=pf.username+"_"+Math.random().toString(36).slice(2,6);label="";
  KITS=window.KITS;low=("ontouchstart" in window)||innerWidth<700;
  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
  scene=new THREE.Scene();cam=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,1200);
@@ -511,7 +538,8 @@ addEventListener("keydown",e=>{if(!on||isTyping(e))return;if(["Space","ArrowUp",
  if(c==="KeyP"&&App.staff?.()){App.openAdmin(true);return}
  if(c==="KeyH"){App.go("menuScreen");return}
  if(c==="KeyC"){document.getElementById("gChat")?.click();return}
- if(c==="KeyB"){const owned=pf.emotes||[];if(owned.length){const poses=[{rax:-2.5,rao:.2},{lax:-2.7,rax:-2.7},{lax:-.8,rax:-.8,llx:.5,rlx:-.5},{tx:.7,lax:.3,rax:.3},{lax:-3,rax:-3,tx:-.2}];Rig.play(me,"emote",1.6,[[0,{}],[.25,poses[owned[0]%5]],[.6,poses[owned[0]%5]],[1,{}]]);feed("EMOTE")}else feed("BUY AN EMOTE IN ITEM SHOP");return}
+ if(c==="KeyB"){toggleEmotes();return}
+ if(c==="KeyY"&&canTrain()){training.auto=!training.auto;if(training.auto){training.lvl=Math.max(1,training.lvl);spT=0}feed(training.auto?"TRAINING BOT ENABLED":"TRAINING BOT DISABLED");return}
  if(c==="Space"){jumpHeld=true;if(!adminFly&&!adminObserve)jump(me)}
  else if(c==="Digit1"||c==="Numpad1")useMove(me,0);else if(c==="Digit2"||c==="Numpad2")useMove(me,1);else if(c==="Digit3"||c==="Numpad3")useMove(me,2);else if(c==="Digit4"||c==="Numpad4")useMove(me,3);else if(c==="Digit5"||c==="Numpad5")ultimate();else if(c==="Digit6"||c==="Numpad6")weaponMove(me);
  else if(c==="KeyQ")dash(me,me.inDir?me.inDir[0]:0,me.inDir?me.inDir[1]:0);else if(c==="KeyG")awaken(me);else if(c==="KeyT")finisher(me);

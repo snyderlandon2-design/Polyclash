@@ -58,7 +58,7 @@ function build(sc,q){scene=sc;low=!!q.low;B.length=0;props.length=0;debris.lengt
  scene.background=new (T().Color)(0x8797a6);scene.fog=new (T().Fog)(0x8797a6,175,530);sky();
  hemi=new (T().HemisphereLight)(0xc8d6df,0x454947,.54);scene.add(hemi);
  sun=new (T().DirectionalLight)(0xe3e7ef,.75);sun.position.set(60,110,40);sun.castShadow=true;
- const sm=low?1024:2048;sun.shadow.mapSize.set(sm,sm);const sc2=sun.shadow.camera;sc2.left=-55;sc2.right=55;sc2.top=55;sc2.bottom=-55;sc2.near=10;sc2.far=300;sun.shadow.bias=-.0006;sun.shadow.normalBias=.4;scene.add(sun);scene.add(sun.target);
+ const sm=low?512:q.medium?1024:2048;sun.shadow.mapSize.set(sm,sm);const sc2=sun.shadow.camera;sc2.left=-55;sc2.right=55;sc2.top=55;sc2.bottom=-55;sc2.near=10;sc2.far=300;sun.shadow.bias=-.0006;sun.shadow.normalBias=.4;scene.add(sun);scene.add(sun.target);
  // ground (sidewalk/concrete)
  const gnd=mesh(new (T().PlaneGeometry)(HALF*2+300,HALF*2+300),M(0x86847e),0,0,0);gnd.rotation.x=-Math.PI/2;gnd.castShadow=false;
  // Open battleground: a broad, uncluttered central combat field with distant city cover.
@@ -73,7 +73,12 @@ function build(sc,q){scene=sc;low=!!q.low;B.length=0;props.length=0;debris.lengt
  }
  // Sparse destructible scenery and throwable trees at the edge of the arena.
  if(!q.duel)for(const x of [-108,-82,82,108])for(const z of [-108,108]){addProp("tree",x,z,0)}
- // No parked cars, traffic props, or obstacles in the fighting lanes.
+ // Pickup stations stay outside the central fighting lanes.
+ if(!q.duel)for(const x of [-35,35])for(const z of [-35,35]){addProp('crate',x,z,0);addProp('bench',x+5,z,0)}
+ // Perimeter accent lines provide a visible boundary without introducing obstacles.
+ const border=M(0x96b4c1,{emissive:0x203b48,emissiveIntensity:.3});
+ for(const z of [-120,120]){const m=mesh(new (T().PlaneGeometry)(240,.16),border,0,.05,z);m.rotation.x=-Math.PI/2;m.castShadow=false}
+ for(const x of [-120,120]){const m=mesh(new (T().PlaneGeometry)(.16,240),border,x,.05,0);m.rotation.x=-Math.PI/2;m.castShadow=false}
 
 }
 function plazaBlock(bx,bz){
@@ -152,3 +157,4 @@ function update(dt,focus){
 function nearestProp(x,z,r,throwable){let b=null,bd=r;for(const p of props){if(!p.alive||p.held||p.fly)continue;if(throwable&&!p.def.throw)continue;const d=Math.hypot(p.x-x,p.z-z)-p.def.r*.5;if(d<bd){bd=d;b=p}}return b}
 window.World={build,update,smash,smashNear,resolve,roofHeight,camClip,blocked,breakProp,damageProps,crater,wallCrater,spawnDebris,nearestProp,props,B,HALF};
 })();
+

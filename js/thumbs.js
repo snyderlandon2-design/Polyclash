@@ -59,10 +59,11 @@ function hero(canvas,p){if(!window.THREE||!canvas)return;if(!H){const r=new (T()
   const disk=new (T().Mesh)(new (T().CylinderGeometry)(2.6,2.8,.25,40),new (T().MeshStandardMaterial)({color:0x2b2350,roughness:.4,metalness:.3}));disk.position.y=-.13;disk.receiveShadow=true;sc.add(disk);
   const ring=new (T().Mesh)(new (T().TorusGeometry)(2.7,.05,8,60),new (T().MeshStandardMaterial)({color:0xffd54a,emissive:0xffd54a,emissiveIntensity:.8}));ring.rotation.x=Math.PI/2;sc.add(ring);
   H={r,sc,c,f:null,key:"",t:0,raf:0}}
- const d=DT(),c=d.CH[p.char]||d.CH[0],sk=d.SKINS[p.skin||0],col=sk&&sk[1]!=null?sk[1]:c.col,k=p.char+"_"+col;
- if(H.key!==k){if(H.f)H.sc.remove(H.f.rig.g);const look=Rig.lookFor(p.char,col,p.skin||0);const rig=Rig.build(look,(d.WP[p.weapon]||d.WP[0]).col);rig.g.traverse(m=>{if(m.isMesh&&!m.userData.ol)m.castShadow=true});H.sc.add(rig.g);H.f={rig,look,ph:0,anState:"idle",vy:0,vx:0,vz:0};H.key=k}
+ const d=DT(),c=d.CH[p.char]||d.CH[0],sk=d.SKINS[p.skin||0],col=sk&&sk[1]!=null?sk[1]:c.col,k=p.char+"_"+col+JSON.stringify(p.avatar||{});
+ if(H.key!==k){if(H.f)H.sc.remove(H.f.rig.g);const look=Rig.lookFor(p.char,col,p.skin||0);if(window.PC_AVATAR)Object.assign(look,PC_AVATAR.look(p));const rig=Rig.build(look,(d.WP[p.weapon]||d.WP[0]).col);rig.g.traverse(m=>{if(m.isMesh&&!m.userData.ol)m.castShadow=true});H.sc.add(rig.g);H.f={rig,look,ph:0,anState:"idle",vy:0,vx:0,vz:0};H.key=k}
  const loop=()=>{if(!canvas.isConnected||canvas.offsetParent===null){H.raf=0;return}const w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.width!==w*Math.min(2,devicePixelRatio)){H.r.setPixelRatio(Math.min(2,devicePixelRatio));H.r.setSize(w,h,false);H.c.aspect=w/h;H.c.updateProjectionMatrix()}
   H.t+=.016;H.f.rig.g.rotation.y=Math.sin(H.t*.6)*.6+.3;Rig.update(H.f,.016,H.t);H.c.position.set(0,4.2,13.5);H.c.lookAt(0,2.9,0);H.r.render(H.sc,H.c);H.raf=requestAnimationFrame(loop)};
  if(!H.raf)H.raf=requestAnimationFrame(loop)}
 window.Thumbs={scan,img,want,hero,render};
 })();
+

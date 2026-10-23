@@ -90,7 +90,7 @@ function faceTex(look,ex){// ex: 0 normal, 1 angry/attacking, 2 hurt
  return faces[k]=new (T().MeshStandardMaterial)({map:t,transparent:true,roughness:.7,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2})}
 // ---------- looks ----------
 function lookFor(id,shirt,skinId){
- const ov=window.DATA&&DATA.CH[id]&&DATA.CH[id].arch;const a=ov!==undefined&&ov!==null?ov:Math.floor(id/20)%20;let s=(id*2654435761>>>0)||1;const r=()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return(s>>>0)/4294967296};
+ id=window.DATA?DATA.START:id;const ov=window.DATA&&DATA.CH[id]&&DATA.CH[id].arch;const a=ov!==undefined&&ov!==null?ov:Math.floor(id/20)%20;let s=(id*2654435761>>>0)||1;const r=()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return(s>>>0)/4294967296};
  const pants=[0x1c1c22,0x2a2f45,0x3b2a20,0x202a20,0x111111,0x4a4a52][Math.floor(r()*6)];
  const theme=skinId===undefined?0:skinId;return{id,arch:a,style:STYLE[a],skinTheme:theme,skinName:window.DATA?.SKINS?.[theme]?.[0]||"",r6:true,shirt:shirt,accent:mixc(shirt,theme%2?0xffffff:0x000000,.42),pants:theme===0?0x999fa8:pants,skin:theme===0?0xaaaaaa:SKIN[Math.floor(r()*SKIN.length)],hair:HAIR[Math.floor(r()*HAIR.length)],eye:EYES[Math.floor(r()*EYES.length)],shoe:theme===0?0x777e88:[0xf2f2f2,0x1a1a1a,0xc62828,0x1565c0,0xd8ad3d][Math.floor(r()*5)]}
 }
@@ -104,19 +104,36 @@ function buildR6(look,glow){
  const hips=piv(0,2,0,root),torso=piv(0,1,0,hips);
  const material=color=>new three.MeshStandardMaterial({color,roughness:.8,metalness:0});
  const part=(parent,geometry,color,x,y,z)=>{const mesh=new three.Mesh(geometry,material(color));mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh};
- const skin=0xffd21f;
- const shirt=look.botLevel?([0x2459d3,0x288a58,0x9b65d4,0xe07933,0xbf334b,0x4bc6d2,0xc49b2b,0x8641b6,0x22242e,0xf4f4f4][Math.min(10,Math.max(1,look.botLevel))-1]):0x1666d9;
- const pants=0x36b443;
+ if(look.skinTheme===1&&!look.custom){look.shirt=0x25131b;look.accent=0xdf3446;look.pants=0x14141b;look.hair=0x15141c;look.shoe=0x171821}
+ const classic=look.skinTheme===12;
+ const skin=classic?0xffd21f:look.skin;
+ const shirt=look.botLevel?([0x2459d3,0x288a58,0x9b65d4,0xe07933,0xbf334b,0x4bc6d2,0xc49b2b,0x8641b6,0x22242e,0xf4f4f4][Math.min(10,Math.max(1,look.botLevel))-1]):(classic?0x1666d9:look.shirt);
+ const pants=classic?0x36b443:(look.skinTheme===1?0x14141b:look.pants);
  const box=(w,h,d)=>rbox(w,h,d,.065);
  const chest=part(torso,box(2,2,1),shirt,0,0,0);
- const arm=side=>{const sp=piv(side*1.5,.95,0,torso),el=piv(0,0,0,sp);part(sp,box(1,2,1),skin,0,-1,0);return{sp,el}};
- const leg=side=>{const hp=piv(side*.5,0,0,hips),kn=piv(0,0,0,hp);part(hp,box(1,2,1),pants,0,-1,0);return{hp,kn}};
+ const arm=side=>{const sp=piv(side*1.5,1,0,torso),el=piv(0,0,0,sp);part(sp,box(1,2,1),skin,0,-1,0);if(!classic){part(sp,box(1.025,.72,1.025),shirt,0,-.36,0);part(sp,box(1.025,.14,1.025),look.accent,0,-1.7,0)}return{sp,el}};
+ const leg=side=>{const hp=piv(side*.5,0,0,hips),kn=piv(0,0,0,hp);part(hp,box(1,2,1),pants,0,-1,0);if(!classic){part(hp,box(.99,.28,1.12),look.shoe,0,-1.86,.05);part(hp,box(.72,.04,.025),look.accent,0,-.4,.515)}return{hp,kn}};
  const L=arm(-1),R=arm(1),LL=leg(-1),RL=leg(1);
  // The head is a vertically oriented cylinder with softened rim edges, resting directly on the torso.
  const neck=piv(0,1,0,torso),head=piv(0,.53,0,neck);
  const profile=[[0,-.53],[.38,-.53],[.47,-.505],[.535,-.45],[.57,-.36],[.585,-.24],[.585,.24],[.57,.36],[.535,.45],[.47,.505],[.38,.53],[0,.53]];
  const cylinder=new three.LatheGeometry(profile.map(([x,y])=>new three.Vector2(x,y)),48);
  part(head,cylinder,skin,0,0,0);
+ // Original face marks, clothing seams and fitted hair, attached to their moving joints.
+ for(const x of [-.19,.19])part(head,box(.075,.12,.035),0x171b24,x,.04,.57);
+ part(head,box(.22,.035,.035),0x171b24,0,-.19,.575);
+ if(!classic){
+  if(look.hairStyle!=='none')part(head,box(1.17,.23,1.12),look.hair,0,.48,-.025);
+  if(look.hairStyle==='long')part(head,box(1.12,.85,.2),look.hair,0,-.02,-.49);
+  if(look.hairStyle!=='none')part(head,box(1.12,.45,.2),look.hair,0,.2,-.49);
+  part(torso,box(.045,1.65,.025),look.accent,0,-.03,.515);
+  part(torso,box(.38,.08,.03),look.accent,-.57,.32,.52);
+  part(torso,box(2.02,.15,1.02),0x161821,0,-.91,0);
+  if(look.hat==='cap'){part(head,box(1.23,.23,1.15),look.accent,0,.62,0);part(head,box(1.25,.06,.65),look.accent,0,.5,.65)}
+  if(look.accessory==='visor')part(head,box(.98,.18,.08),look.accent,0,.04,.61);
+  if(look.accessory==='scarf'){part(torso,box(1.24,.18,1.18),look.accent,0,.93,0);part(torso,box(.34,1.2,.12),look.accent,.55,.2,-.59)}
+  for(const x of [-.15,.15])part(torso,box(.12,.4,.035),look.accent,x,.7,.52);
+ }
  const fg=side=>{const mesh=new three.Mesh(box(.86,.85,.9),new three.MeshStandardMaterial({color:glow||0xffffff,emissive:glow||0xffffff,emissiveIntensity:.7,transparent:true,opacity:.75}));mesh.position.y=-1;mesh.visible=false;side.sp.add(mesh);return mesh};
  return{g,root,hips,torso,neck,head,L,R,LL,RL,glow:[fg(L),fg(R)],cur:{},look,chest,face:null,sway:[],ex:0};
 }
@@ -357,9 +374,13 @@ const A={
  awaken:[[0,{tx:.5,lax:.4,lao:.3,lab:1.8,rax:.4,rao:.3,rab:1.8,y:-.5,hx:.4,llb:.8,rlb:.8}],[.6,{tx:.5,lax:.5,lao:.35,lab:1.9,rax:.5,rao:.35,rab:1.9,y:-.55,hx:.45,llb:.8,rlb:.8}],[.8,{tx:-.3,lax:-.5,lao:1.4,rax:-.5,rao:1.4,hx:-.4,y:.2}],[1,{tx:-.2,lao:1.2,rao:1.2,hx:-.3}]],
  finisher:[[0,{lax:-3.0,rax:-3.0,lab:.2,rab:.2,y:.4,tx:-.3}],[.4,{lax:-3.0,rax:-3.0,lab:.2,rab:.2,y:.5,tx:-.35}],[.6,{lax:-1.5,rax:-1.5,lab:0,rab:0,tx:.6,y:-.3,llx:-.6,rlx:.5}],[1,{lax:-1.2,rax:-1.2,tx:.3}]]
 };
-function play(f,name,dur,keysOverride){f.act={keys:keysOverride||A[name]||A.thrust,t:0,dur:dur||.4,name};}
+function play(f,name,dur,keysOverride){
+ const priority=name==='getup'?3:name==='emote'?0:2;
+ if(f.act&&f.act.priority>priority&&f.act.t<.8)return false;
+ f.act={keys:keysOverride||A[name]||A.thrust,t:0,dur:Math.max(.05,dur||.4),name,priority,from:{...f.rig.cur}};return true;
+}
 function m1Keys(f,i){
- const style=f.look?f.look.style:0,arch=f.look?f.look.arch:0,base=M1[style][i%4];
+ const style=0,arch=0,base=i%4===2?A.kickup:M1[style][i%4];
  // Each archetype changes its weight shift, lead side and attack silhouette.
  const lean=((arch%5)-2)*.085,side=arch%2?-1:1;
  return base.map(([t,p])=>[t,Object.assign({},p,{
@@ -379,7 +400,7 @@ function update(f,dt,time){
  if(R.sway.length){const sp=Math.min(30,Math.hypot(f.vx||0,f.vz||0)),up=(f.vy||0)>0?0:Math.min(.6,-(f.vy||0)*.02);
   for(const c of R.sway)c.segs.forEach((s,i)=>{s.rotation.x=(i?.06:c.ang)+sp*(i?.012:.035)+up*(i?.2:.6)+Math.sin(time*3.2+i*.9+(f.x||0)*.1)*(.04+sp*.003)})}
  let pose=loco(f,time);
- if(f.act){f.act.t+=dt/f.act.dur;if(f.act.t>=1&&!f.act.hold)f.act=null;else pose=mix(pose,sample(f.act.keys,Math.min(1,f.act.t)),Math.min(1,f.act.t*8+.4))}
+ if(f.act){f.act.t+=dt/f.act.dur;if(f.act.t>=1&&!f.act.hold&&!f.act.loop)f.act=null;else {if(f.act.loop)f.act.t%=1;const t=Math.min(1,f.act.t),blend=ss(Math.min(1,t/.12)),exit=f.act.hold||f.act.loop?1:ss(Math.min(1,(1-t)/.18));pose=mix(pose,mix(f.act.from||pose,sample(f.act.keys,t),blend),exit)}}
  const c=f.rig.cur,k=1-Math.exp(-dt*(f.act?34:19));
  for(const key of KEYS){const v=pose[key]||0;c[key]=c[key]===undefined?v:c[key]+(v-c[key])*k}
  // big rotations (ry spins, flips) must not lag
@@ -404,3 +425,4 @@ function apply(r,c){
 }
 window.Rig={build,lookFor,update,play,m1Keys,setQuality,ARCH,STYLE,STYLE_NAMES,A};
 })();
+

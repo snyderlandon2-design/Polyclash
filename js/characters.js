@@ -26,7 +26,7 @@ const POWERS=[{n:"Flame",fx:"burn",col:0xff6a00,d:"Skill hits set enemies on fir
 {n:"Venom",fx:"poison",col:0x7cff3a,d:"Skill hits poison enemies (slow + damage over 5s)."},
 {n:"Time",fx:"haste",col:0xf0d9a0,d:"Skill hits shave 0.5s off all your cooldowns."}];
 const PIDX={};POWERS.forEach((p,i)=>{PIDX[p.n]=i});
-const SKINS=[["Default",null],["Crimson",0xc62828],["Ocean",0x1976d2],["Toxic",0x43a047],["Royal",0x7e57c2],["Gold",0xd8ad3d],["Obsidian",0x212121],["Snow",0xeceff1],["Sunset",0xff7043],["Neon Pink",0xff2fd0],["Cyan",0x00e5ff],["Blood Moon",0x8b0000]];
+const SKINS=[["Default",null],["Crimson",0xc62828],["Ocean",0x1976d2],["Toxic",0x43a047],["Royal",0x7e57c2],["Gold",0xd8ad3d],["Obsidian",0x212121],["Snow",0xeceff1],["Sunset",0xff7043],["Neon Pink",0xff2fd0],["Cyan",0x00e5ff],["Blood Moon",0x8b0000],["Classic Noob",0xffd21f]];
 // ---- admin-exclusive content (never drops from bags; only granted by admins) ----
 RAR.push(["Exclusive",0xffd700]);
 POWERS.push({n:"Cosmic",fx:"crit",col:0xff4dff,d:"Exclusive cosmic power."});PIDX.Cosmic=POWERS.length-1;
@@ -36,3 +36,4 @@ const TITLES=["Champion","Legend","Grandmaster","Untouchable","Combo King","Air 
 const XPOWERS=[["god","God Mode"],["inf","No dash/evasive cooldown"],["speed","Speed boost"]];
 window.DATA={RAR,CH,WP,BAGS,POWERS,PIDX,SKINS,START:rs.indexOf(0),TITLES,XPOWERS,NORMAL_CH:400,NORMAL_WP:60};
 })();
+

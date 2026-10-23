@@ -2,29 +2,29 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>PolyClash Arena 3D</title>
-<link rel="stylesheet" href="css/style.css?v=20261022-controls9">
+<link rel="stylesheet" href="css/style.css?v=20261023-foundation1">
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-</head><body>
-<header class="top"><button class="sb" data-go="menuScreen">HOME</button><button id="chatToggle" class="sb" title="Chat" aria-label="Open chat">CHAT</button><b class="brand">POLYCLASH <i>ARENA</i></b><div class="acct"><span id="who"></span><span id="coins"></span></div></header>
+<link rel="stylesheet" href="css/redesign.css?v=20261023-foundation1"></head><body>
+<header class="top"><button class="sb" data-go="menuScreen">HOME</button><button id="chatToggle" class="sb" title="Chat" aria-label="Open chat">CHAT</button><b class="brand">POLY-CLASH <i>ARENA</i></b><div class="acct"><span id="who"></span><span id="coins"></span></div></header>
 <main>
-<section id="homeScreen" class="screen on"><div class="card"><h1>POLYCLASH <i>ARENA</i></h1>
-<p class="mu">3D arena fighter. No email needed.</p>
+<section id="homeScreen" class="screen on"><div class="card"><h1>POLY-CLASH <i>ARENA</i></h1>
+<p class="mu">Your avatar. Your fighting style. Build your four-move loadout.</p>
 <input id="uIn" maxlength="16" placeholder="Username" autocomplete="username"><input id="pIn" type="password" placeholder="Password" autocomplete="current-password">
 <div class="row"><button id="inBtn" class="btn">LOG IN</button><button id="upBtn2" class="btn gold">CREATE ACCOUNT</button></div>
 <button id="guestBtn" class="btn red wide">PLAY AS GUEST</button><p id="authMsg" class="st"></p><p id="modeNote" class="tiny"></p></div></section>
 
-<section id="menuScreen" class="screen"><div class="card menu"><div class="hero"><canvas id="heroCv"></canvas><div class="heroTxt"><b id="heroName"></b><small id="heroSub"></small></div></div><h1>POLYCLASH <i>ARENA</i></h1><p id="stats" class="mu"></p><p id="news" class="st"></p>
-<div id="duelInbox" class="list"></div><div class="grid2"><button class="btn red" data-go="grindScreen">GRIND / MY ARENA</button><button class="btn red" data-go="onlineScreen">ONLINE</button>
-<button class="btn gold" data-go="shopScreen">ITEM SHOP</button><button class="btn" data-go="lockerScreen">LOCKER</button>
+<section id="menuScreen" class="screen"><div class="card menu"><div class="hero"><canvas id="heroCv"></canvas><div class="heroTxt"><b id="heroName"></b><small id="heroSub"></small></div></div><h1>POLY-CLASH <i>ARENA</i></h1><p id="stats" class="mu"></p><p id="news" class="st"></p>
+<div id="duelInbox" class="list"></div><div class="grid2"><button class="btn red" data-go="grindScreen">TRAINING ARENA</button><button class="btn red" data-go="onlineScreen">ONLINE</button>
+<button class="btn gold" data-go="shopScreen">ITEM SHOP</button><button class="btn" data-go="lockerScreen">AVATAR / LOADOUT</button>
 <button class="btn" data-go="boardScreen">LEADERBOARD</button><button class="btn" data-go="guideScreen">POWER GUIDE</button><button id="adminBtn" class="btn hide" data-go="adminScreen">ADMIN</button><button id="aiDevBtn" class="btn hide" data-go="aiDevScreen">AI DEVELOPER</button></div>
 <button class="btn" data-go="settingsScreen">⚙ SETTINGS</button><button id="outBtn" class="lnk">Log out</button></div></section>
 
 <section id="settingsScreen" class="screen"><div class="card big"><h2>SETTINGS</h2><p class="mu">Personalize your camera, interface and mobile controls. Saved on this device.</p>
 <label>Camera distance <input id="setCam" type="range" min="8" max="24" step="1" value="13"></label>
 <label>Camera sensitivity <input id="setSens" type="range" min="30" max="180" step="10" value="100"></label>
-<label>Graphics <select id="setGraphics"><option value="auto">Automatic</option><option value="low">Performance</option><option value="high">Quality</option></select></label>
-<h3>BUTTON POSITIONS</h3>
+<label>Graphics <select id="setGraphics"><option value="auto">Automatic</option><option value="low">Performance</option><option value="medium">Balanced</option><option value="high">Quality</option></select></label>
+<label>Motion <select id="setMotion"><option value="full">Full effects</option><option value="reduced">Reduced motion</option></select></label><h3>BUTTON POSITIONS</h3>
 <label>Home button horizontal position <input id="setHomeX" type="range" min="-90" max="90" value="0"></label>
 <label>Chat button horizontal position <input id="setChatX" type="range" min="-90" max="90" value="0"></label>
 <h3>MOBILE CONTROLS</h3>
@@ -47,8 +47,8 @@
 <div id="bagGrid" class="bags"></div><h3>DIRECT ITEM SHOP</h3><p class="mu">Five featured choices per category. Direct purchase, no luck required.</p><p class="mu" id="shopCountdown">Featured shop refreshes every 24 hours (UTC midnight)</p><p class="mu"></p><div id="featuredShop"></div><h3>CATEGORY BAGS</h3><div id="categoryBags"></div><div id="shopRes" class="res">Pick a bag</div><button class="btn" data-go="menuScreen">BACK</button></div></section>
 
 <section id="lockerScreen" class="screen"><div class="card big"><h2>AVATAR & MOVE LOADOUT</h2><p id="lockInfo" class="mu"></p>
-<div class="row"><button id="tabC" class="btn hide">CHARACTERS</button><button id="tabW" class="btn">WEAPONS</button><button id="tabS" class="btn">SKINS</button><button id="tabM" class="btn">MOVE LOADOUT</button></div>
-<div id="lockGrid" class="cards"></div><div id="moveLoadout" class="hide"></div><button id="upBtn" class="btn gold">UPGRADE</button><button class="btn" data-go="menuScreen">BACK</button></div></section>
+<div class="row"><button id="tabC" class="btn">FIGHTING STYLES</button><button id="tabW" class="btn">WEAPONS</button><button id="tabS" class="btn">SKINS</button><button id="tabM" class="btn">MOVE LOADOUT</button></div>
+<div id="avatarStudio"></div><div id="lockGrid" class="cards"></div><div id="moveLoadout" class="hide"></div><button id="upBtn" class="btn gold">UPGRADE</button><button class="btn" data-go="menuScreen">BACK</button></div></section>
 
 <section id="boardScreen" class="screen"><div class="card big"><h2>LEADERBOARD</h2><div id="boardTabs" class="row"></div><div id="boardList" class="list"></div><button class="btn" data-go="menuScreen">BACK</button></div></section>
 
@@ -89,14 +89,15 @@
 <div id="grabHint" class="grabh hide"></div>
 <div id="extP" class="extp"><b>&#8679; JUMP TO EXTEND</b><div class="extbar"><div id="extF"></div></div></div>
 <div id="airP" class="airp"></div>
-<div id="train" class="train hide"><div class="trh">TRAINING <small id="tCount"></small></div><div class="trow"><button id="tLvlDn" class="tbn">&#8722;</button><b id="tLvl">Lv 3</b><button id="tLvlUp" class="tbn">+</button></div><button id="tSpawn" class="tbn wide">SPAWN BOT</button><div class="trow"><button id="tAuto" class="tbn">AUTO: ON</button><button id="tClear" class="tbn">CLEAR</button></div></div>
+<div id="train" class="train hide"><div class="trh">TRAINING <small id="tCount"></small></div><div class="trow"><button id="tLvlDn" class="tbn">&#8722;</button><b id="tLvl">Lv 3</b><button id="tLvlUp" class="tbn">+</button></div><label class="tiny">BOT BEHAVIOR<select id="trainingBehavior"><option value="aggressive">Aggressive</option><option value="defensive">Defensive</option><option value="passive">Passive dummy</option><option value="combo">Combo practice</option></select></label><button id="tReset" class="tbn wide">RESET HEALTH / STATS</button><p id="trainingMetrics" class="tiny">0 hits · 0 damage</p><button id="tSpawn" class="tbn wide">SPAWN BOT</button><div class="trow"><button id="tAuto" class="tbn">AUTO: ON</button><button id="tClear" class="tbn">CLEAR</button></div></div>
 <div id="moves" class="moves"></div>
-<div id="hint" class="hint">WASD move · 6 weapon ability · Q while stunned to escape · Click to lock mouse · Shift sprint · Space jump (Space at a wall = wall jump) · Click/J punch (4 = knockback) · hold Space + 4th = uppercut, then Space = air extend · 3 air hits + click = slam · Q dash (+click = dash punch) · F block (tap = parry) · Q when hit = evasive · E grab/throw · 1-4 moves · G awaken · R finisher</div>
+<div id="hint" class="hint">WASD move · Shift sprint · Space jump / wall jump · F / click attack · R guard / parry · Q dash / evasive · 1–4 moves · E grab / throw · G awaken · T finisher · B emotes · Y training · Arrow keys camera</div>
 <button id="leaveBtn" class="leave">LEAVE</button>
 <div id="touch" class="hide"><div id="camPad"></div><div id="joy"><div id="knob"></div></div>
 <div class="tbs"><button class="tb" data-a="weapon">WEAPON</button><button class="tb" data-a="grab">GRAB</button><button class="tb" data-a="blk">BLOCK</button><button class="tb" data-a="aw">AWAKEN</button>
 <button class="tb" data-a="dash">DASH</button><button class="tb" data-a="jump">JUMP</button><button class="tb atk" data-a="m1">PUNCH</button></div></div>
 </div>
 <aside id="chatPanel" class="chatPanel hide" aria-label="Player chat"><div class="chatHead"><b>PLAYER CHAT</b><button id="chatClose" class="sb">✕</button></div><div class="chatTabs"><button id="chatGroup" class="on">GROUP</button><button id="chatDirect">PRIVATE</button><button id="chatAdmin">ANNOUNCE</button></div><div id="chatToWrap" class="hide"><input id="chatTo" placeholder="Recipient username" maxlength="16"></div><div id="chatMessages" class="chatMessages"></div><form id="chatForm" class="chatForm"><input id="chatText" placeholder="Type a message..." maxlength="500" autocomplete="off"><button type="submit">SEND</button></form><p id="chatError" class="tiny"></p></aside><div id="toast"></div>
-<script src="js/config.js"></script><script src="js/characters.js?v=20261022-combat-redesign12"></script><script src="js/backend.js?v=20261022-combat-redesign12"></script><script src="js/rig.js?v=20261022-combat-redesign12"></script><script src="js/fx.js"></script><script src="js/world.js?v=20261022-combat-redesign12"></script><script src="js/kits.js"></script><script src="js/thumbs.js?v=20261022-combat-redesign12"></script><script src="js/moves.js?v=20261022-combat-redesign12"></script><script src="js/game.js?v=20261022-combat-redesign12"></script><script src="js/app.js?v=20261022-combat-redesign12"></script><script src="js/chat.js?v=20261022-combat-redesign12"></script><script src="js/presence.js?v=20261022-combat-redesign12"></script><script src="js/settings.js?v=20261022-combat-redesign12"></script><script src="js/features.js?v=20261022-combat-redesign12"></script>
+<script src="js/config.js"></script><script src="js/characters.js?v=20261023-foundation1"></script><script src="js/backend.js?v=20261023-foundation1"></script><script src="js/rig.js?v=20261023-foundation1"></script><script src="js/fx.js"></script><script src="js/world.js?v=20261023-foundation1"></script><script src="js/kits.js"></script><script src="js/thumbs.js?v=20261023-foundation1"></script><script src="js/moves.js?v=20261023-foundation1"></script><script src="js/combat-core.js"></script><script src="js/game.js?v=20261023-foundation1"></script><script src="js/app.js?v=20261023-foundation1"></script><script src="js/chat.js?v=20261023-foundation1"></script><script src="js/presence.js?v=20261023-foundation1"></script><script src="js/settings.js?v=20261023-foundation1"></script><script src="js/avatar.js"></script><script src="js/features.js?v=20261023-foundation1"></script>
 </body></html>
+

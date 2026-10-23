@@ -1,0 +1,118 @@
+{
+  "scope": "offline guest, real Chromium WebGL; Supabase excluded",
+  "results": [
+    {
+      "test": "Guest enters menu",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "Real WebGL draws geometry",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "Legacy fighter and weapon IDs do not affect combat stats",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "WASD moves avatar",
+      "pass": true,
+      "detail": 9.207152151298445
+    },
+    {
+      "test": "Jump rises and returns to floor",
+      "pass": true,
+      "detail": {
+        "height": 2.6133333333333337,
+        "landed": 0
+      }
+    },
+    {
+      "test": "Bot spawns in open space above floor",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "Light attack does not hit before startup",
+      "pass": true,
+      "detail": 1000
+    },
+    {
+      "test": "Active light attack damages target",
+      "pass": true,
+      "detail": 995.5
+    },
+    {
+      "test": "Training damage feedback updates",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "Move cooldown prevents duplicate casts",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "Emote plays then movement cancels",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "Crimson and classic palettes differ",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "Collision pushes player out of buildings",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "Training reset restores health and clears statistics",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "Avatar customization saves without changing fighter",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "Avatar customization survives fighter changes",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "Fighter determines combat move pool",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "Graphics and motion settings persist",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "Medium graphics applies pixel ratio",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "No uncaught JavaScript errors",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "test": "Mobile touch controls visible",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "test": "Mobile viewport has no horizontal overflow",
+      "pass": true,
+      "detail": null
+    }
+  ]
+}

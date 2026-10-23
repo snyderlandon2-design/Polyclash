@@ -32,11 +32,11 @@ function pillar(x,z,c,h,r,l){const m=new (T().Mesh)(new (T().CylinderGeometry)(r
 function spikes(x,z,c,n,r){for(let i=0;i<n;i++){const a=i/n*6.283,d=r*(.4+Math.random()*.6);const m=new (T().Mesh)(new (T().ConeGeometry)(.6,3.5,5),new (T().MeshStandardMaterial)({color:c,emissive:c,emissiveIntensity:.35,transparent:true,roughness:.2}));m.position.set(x+Math.cos(a)*d,0,z+Math.sin(a)*d);m.rotation.set(Math.sin(a)*.4,0,-Math.cos(a)*.4);obj(m,1.1,(o,t)=>{o.m.position.y=Math.min(1,t*8)*1.5-(t>.8?(t-.8)*8:0);o.m.material.opacity=t>.8?1-(t-.8)*5:1})}}
 function aura(f,c,rate){if(Math.random()>rate)return;const a=Math.random()*6.283;P(f.x+Math.cos(a)*1.1,f.y+Math.random()*4.5,f.z+Math.sin(a)*1.1,c,0,5+Math.random()*4,0,.25+Math.random()*.3,.5,-4)}
 function trail(x,y,z,c){P(x+(Math.random()-.5)*.6,y+Math.random()*3,z+(Math.random()-.5)*.6,c,0,1,0,.3,.3,0)}
-function shake(a){shakeA=Math.max(shakeA,a)}
+function shake(a){if(window.PC_SETTINGS?.get().motion==='reduced')return;shakeA=Math.max(shakeA,a)}
 function hitstop(s){stop=Math.max(stop,s)}
-function slowmo(sc,s){slowS=sc;slowT=s}
-function speed(a){speedA=Math.max(speedA,a)}
-function flash(c,a){flashC=c;flashA=Math.max(flashA,a)}
+function slowmo(sc,s){if(window.PC_SETTINGS?.get().motion==='reduced')return;slowS=sc;slowT=s}
+function speed(a){if(window.PC_SETTINGS?.get().motion==='reduced')return;speedA=Math.max(speedA,a)}
+function flash(c,a){if(window.PC_SETTINGS?.get().motion==='reduced')return;flashC=c;flashA=Math.max(flashA,a)}
 let bannerT=0;
 function banner(txt,col){const e=document.getElementById("banner");if(!e)return;e.textContent=txt;e.style.color=col||"#fff";e.classList.remove("show");void e.offsetWidth;e.classList.add("show");bannerT=1.6}
 // returns the time scale for this frame (0 during hit-stop)
@@ -56,3 +56,4 @@ function update(dt,rdt){
 function clear(){parts.forEach(p=>scene&&scene.remove(p.m));objs.forEach(o=>scene&&scene.remove(o.m));parts.length=0;objs.length=0;if(cx)cx.clearRect(0,0,cv.width,cv.height);shakeA=stop=slowT=speedA=flashA=0}
 window.FX={init,resize,burst,dust,spark,ring,boom,beam,bolt,pillar,spikes,aura,trail,shake,hitstop,slowmo,speed,flash,banner,timeScale,update,clear};
 })();
+

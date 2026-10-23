@@ -1,0 +1,6 @@
+{
+ "name":"polyclash-arena",
+ "private":true,
+ "version":"0.1.0",
+ "scripts":{"test":"node --test tests/*.test.cjs","test:browser":"python tests/browser_test.py","serve":"python -m http.server 8000"}
+}

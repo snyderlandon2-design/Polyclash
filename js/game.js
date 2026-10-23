@@ -10,7 +10,7 @@ let on=false,scene,cam,ren,raf=0,t0=0,time=0,mode,lvl=1,label="",ch=null,myId=""
 let me=null;const bots=[],rem=new Map(),proj=[],hazards=[],walls=[];
 let adminFly=false,adminObserve=false,shiftLock=false,pistolEquipped=false,pistolLaser=null,pistolModel=null,pistolLast=0;let yaw=0,pitch=.32,dist=13,keys={},md=0,joy={x:0,z:0},jumpHeld=false,camT=null,fovKick=0;
 let combo={n:0,t:0},tgt=null,tgtT=0,spT=0,bt=0,ct=0,hudT=0,KITS=null;
-let training={lvl:3,auto:true},host=false,ultCD=0,botSeq=0,bst=0,duelScore={mine:0,theirs:0,finished:false};
+let training={lvl:3,auto:true,behavior:"aggressive",damage:0,hits:0,lastHit:0,best:0},host=false,ultCD=0,botSeq=0,bst=0,duelScore={mine:0,theirs:0,finished:false};
 const insaneActive=()=>!!(window.App&&App.insane&&App.insane());
 const canTrain=()=>mode==="grind"||mode==="personal"||(mode==="online"&&host);
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -22,13 +22,16 @@ function drawTag(f){const T=f.tag;if(!T)return;const hp=Math.max(0,Math.round(f.
  if(f.title){x.font="bold 20px system-ui,sans-serif";x.fillStyle="#ffd54a";x.strokeText("« "+f.title+" »",128,26);x.fillText("« "+f.title+" »",128,26)}
  x.font="bold 26px system-ui,sans-serif";x.fillStyle=f.isMe?"#ffd54a":"#fff";x.strokeText(f.name,128,56);x.fillText(f.name,128,56);
  if(!f.isMe){x.fillStyle="#000a";x.fillRect(38,68,180,14);x.fillStyle=f.hp/f.mhp>.35?"#3ddc5a":"#ff3b3b";x.fillRect(40,70,176*clamp(f.hp/f.mhp,0,1),10)}T.t.needsUpdate=true}
-function statsFor(p){const c=DT.CH[p.char]||DT.CH[0],w=DT.WP[p.weapon]||DT.WP[0],L=(p.lv&&p.lv[p.char])||1;
- return{c,w,mhp:Math.round(100*c.hp*(1+L*.08)),dmg:c.dmg*(1+L*.1)*(1+(w.dmg-1)*.3),spd:c.spd,agi:c.agi,rng:1+(w.rng-3)*.12,kit:p.xKit&&DT.PIDX[p.xKit]!==undefined?DT.PIDX[p.xKit]:(DT.PIDX[c.pw]||0)}}
+function statsFor(p){
+ const c=DT.CH[DT.START],w=DT.WP[p.weapon]||DT.WP[0],progress=PC_COMBAT.progression(p.xp);
+ return{c,w,mhp:progress.health,dmg:1,spd:1,agi:1,rng:1,kit:DT.PIDX[(DT.CH[p.char]||c).pw]||0,level:progress.level};
+}
 function makeFighter(o){
- const look=window.Rig.lookFor(o.charId,o.col,o.skinId||0);look.botLevel=o.isBot?o.lv:0;const rig=window.Rig.build(look,o.glow);rig.g.traverse(m=>{if(m.isMesh)m.castShadow=!m.userData.ol&&(!low||m.parent===rig.torso||m.parent===rig.hips||m.parent===rig.head)});scene.add(rig.g);
+ const look=window.Rig.lookFor(o.charId,o.col,o.skinId||0);if(o.avatar&&window.PC_AVATAR)Object.assign(look,PC_AVATAR.look({avatar:o.avatar,skin:o.skinId||0}));if(o.isMe&&window.PC_AVATAR)Object.assign(look,PC_AVATAR.look(pf));look.botLevel=o.isBot?o.lv:0;const rig=window.Rig.build(look,o.glow);rig.g.traverse(m=>{if(m.isMesh)m.castShadow=!m.userData.ol&&(!low||m.parent===rig.torso||m.parent===rig.hips||m.parent===rig.head)});scene.add(rig.g);
  const f=Object.assign({rig,look,x:0,y:0,z:0,vx:0,vy:0,vz:0,r:0,st:"free",stT:0,cd:[0,0,0,0],m1i:-1,m1T:0,m1CD:0,dashT:0,dashCD:0,dashDir:"F",blk:false,blkT:9,guard:100,awk:0,awT:0,fin:false,evT:0,inv:0,carry:null,pend:[],lock:0,root:null,buff:{},sh:0,ph:0,anState:"idle",fl:0,mv:false,air:false,dead:false,rt:0,hist:[],histT:0},o);
  f.kitDef=KITS[f.kit%KITS.length];
- if(f.isMe&&window.PC_EXTRA_MOVES){const slots=(pf.moveSlots||{})[f.kit]||[0,1,2,3],pool=[...f.kitDef.moves,...PC_EXTRA_MOVES];f.kitDef=Object.assign({},f.kitDef,{moves:slots.map((id,i)=>pool[id]&&((pool[id].unlockXP||0)<=pf.xp||pf.role==="mega"||(pf.boughtMoves||[]).includes(id-f.kitDef.moves.length))?pool[id]:pool[i])})}
+ if(f.isMe&&window.PC_EXTRA_MOVES){const base=KITS[f.kit],pool=[...base.moves,...PC_EXTRA_MOVES],slots=PC_COMBAT.validLoadout(pf.moveSlots?.[f.kit],pool,pf.xp,pf.boughtMoves||[]);f.kitDef={...base,moves:slots.map(i=>pool[i])}}
+
  nameTag(f);
  const ice=new THREE.Mesh(new THREE.BoxGeometry(2.4,5.4,2.4),new THREE.MeshStandardMaterial({color:0xaee9ff,transparent:true,opacity:.55,roughness:.1}));ice.position.y=2.7;ice.visible=false;rig.g.add(ice);f.ice=ice;
  return f}
@@ -43,7 +46,7 @@ function aimFor(f){// choose who to attack: closest foe, preferring camera direc
  if(!f.isMe)return nearest(f,12);let b=null,bs=1e9;const C=camFwd();for(const t of foesOf(f)){const dx=t.x-f.x,dz=t.z-f.z,d=Math.hypot(dx,dz);if(d>14)continue;const dot=(dx*C[0]+dz*C[1])/(d||1);const s=d-dot*5;if(dot>-.3&&s<bs){bs=s;b=t}}return b}
 function aim(f){const t=aimFor(f);if(t)face(f,t.x,t.z);else if(f.isMe){const C=camFwd();if(f.mv||md)f.r=Math.atan2(C[0],C[1])}return t}
 const grounded=f=>f.y<=(f.floorY||0)+.01;
-const free=f=>f.st==="free"&&f.lock<=0&&!f.dead;
+const free=f=>f.st==="free"&&f.lock<=0&&!f.dead&&!(mode==="duel"&&duelScore.finished);
 function later(f,s,fn){f.pend.push({t:s,fn})}
 function interrupt(f){f.pend.length=0;f.act=null;f.lock=0;f.root=null;f.dashT=0;f.blk=false;if(f.carry)dropProp(f)}
 // ---------- damage ----------
@@ -55,7 +58,12 @@ function openExt(att,t){if(!(att.isMe||att.isBot))return;att.extT=.62;att.extTgt
 function hitFx(t,h){if(h.quiet)return;const heavy=h.kind!=="light";FX.spark(t.x,t.y+3,t.z,h.col||0xffffff,heavy);if(heavy){FX.shake(.45);FX.hitstop(.09);fovKick=5}else{FX.shake(.18);FX.hitstop(.045);fovKick=2}}
 function gainAwk(f,a){if(f.awT>0)return;f.awk=Math.min(100,f.awk+a*.9)}
 function receive(t,att,h){
- if(t.dead||t.inv>0)return false;
+ if(t.dead||t.inv>0||(mode==="duel"&&duelScore.finished))return false;
+ if(!h||!Number.isFinite(h.dmg)||h.dmg<0)return false;
+ // A six-second juggle budget forces a recovery escape instead of an infinite stun loop.
+ if((h.stun||h.kind==='light'||h.kind==='air')&&t.st!=='free'&&time-(t.comboStart||0)>6){interrupt(t);t.st='free';t.inv=.75;t.comboStart=time;return false}
+ if(t.st==='free')t.comboStart=time;
+ t.lastDamage=time;
  const ax=att.x,az=att.z,dx=h.dx!==undefined?h.dx:(t.x-ax),dz=h.dz!==undefined?h.dz:(t.z-az),dl=Math.hypot(dx,dz)||1,nx=dx/dl,nz=dz/dl;
  let dmg=h.dmg;if(att&&att.isMe&&pw("god"))dmg=Math.max(dmg,100);
  // block / parry
@@ -68,7 +76,8 @@ function receive(t,att,h){
   if(t.guard<=0){t.guard=0;interrupt(t);t.st="stun";t.stT=1.7;FX.ring(t.x,t.y+3,t.z,0xff3b3b,5,.4,true,t.r);if(t.isMe||att.isMe)FX.banner("GUARD BREAK","#ff6b6b")}
   else{t.hp-=dmg*.12;hitDone(t,att,dmg*.12)}return false}}
  if(t.sh>0){const a=Math.min(t.sh,dmg);t.sh-=a;dmg-=a;FX.burst(t.x,t.y+3,t.z,0x7df9ff,6,8,.3,.3)}
- t.hp-=dmg;t.fl=6;if(att&&!att.rid)gainAwk(att,dmg*1.1);gainAwk(t,dmg*.6);
+ t.hp-=dmg;t.fl=6;
+ if(att?.isMe){training.damage+=dmg;training.hits++;training.lastHit=time;training.best=Math.max(training.best,combo.n+1)}if(att&&!att.rid)gainAwk(att,dmg*1.1);gainAwk(t,dmg*.6);
  if(att&&!att.rid&&att.isMe){combo.n++;combo.t=2;tgt=t;tgtT=4}
  if(h.heal&&att&&!att.rid)att.hp=Math.min(att.mhp,att.hp+dmg*h.heal);
  if(h.burn)t.burn={t:3,d:dmg*.12};if(h.poison)t.poison={t:5,d:dmg*.09};if(h.slow)t.slowT=Math.max(t.slowT||0,h.slow);
@@ -163,7 +172,7 @@ function awaken(f){if(!free(f)||f.awk<100||f.awT>0)return false;f.awk=0;f.awT=30
 function m1(f){
  if(f.isMe){closeEmotes();if(f.act?.name==="emote")f.act=null}
  if(f.carry){if(free(f))throwProp(f);return}
- if(f.dead||f.m1CD>0)return;
+ if(f.dead||f.m1CD>0||(mode==="duel"&&duelScore.finished))return;
  const dashing=f.dashT>0&&f.dashDir==="F";
  if(!dashing&&!free(f))return;
  const t=aim(f);const col=f.awT>0?f.kitDef.col:0xffffff;
@@ -171,14 +180,14 @@ function m1(f){
  if(dashing){// dash punch
   f.dashT=0;Rig.play(f,"dashpunch",.38);f.lock=.32;f.m1CD=.7;K.lunge(f,30,.14);
   later(f,.1,()=>{cone(f,4.6*f.S.rng,1.7,{dmg:8*dmgMul(f),kind:"knock",kb:36,up:7,col,guardDmg:60})});if(f.isMe)pushState(true);return}
- const i=f.m1T>0?(f.m1i+1)%4:0;f.m1i=i;f.m1T=1.3;
+ const i=f.m1T>0?(f.m1i+1)%4:0;f.m1i=i;f.m1T=.95;const timing=PC_COMBAT.LIGHT[i];
  if(t){const d=Math.hypot(t.x-f.x,t.z-f.z);if(d>3&&d<9)K.lunge(f,Math.min(26,(d-2.5)*7),.12)}
- if(i<3){Rig.play(f,"m1",.3,Rig.m1Keys(f,i));f.lock=.24;f.anM1=i;
-  later(f,.1,()=>cone(f,4.3*f.S.rng,1.9,{dmg:4.5*dmgMul(f),kind:"light",stun:.6,kb:4,col}))}
+ if(i<3){Rig.play(f,"m1",timing.animation,Rig.m1Keys(f,i));f.lock=timing.animation;f.anM1=i;
+  later(f,timing.startup,()=>cone(f,4.3*f.S.rng,1.9,{dmg:timing.damage*dmgMul(f),kind:"light",stun:.6,kb:4,col}))}
  else{f.m1CD=1.0;f.m1T=0;
   if(!grounded(f)){Rig.play(f,"downslam",.42);f.lock=.36;f.vy=-10;later(f,.14,()=>cone(f,4.8*f.S.rng,2.2,{dmg:7*dmgMul(f),kind:"slam",col,guardDmg:60},7))}
   else if(jumpHeldFor(f)){Rig.play(f,"uppercut",.45);f.lock=.38;later(f,.14,()=>{if(cone(f,4.4*f.S.rng,1.9,{dmg:6.5*dmgMul(f),kind:"launch",kb:3,up:30,col,guardDmg:60})){f.vy=27}})}
-  else{Rig.play(f,"m1",.42,Rig.m1Keys(f,3));f.lock=.36;later(f,.15,()=>cone(f,4.6*f.S.rng,2.0,{dmg:7*dmgMul(f),kind:"knock",kb:42,up:8,col,guardDmg:60}))}}
+  else{Rig.play(f,"m1",.42,Rig.m1Keys(f,3));f.lock=timing.animation;later(f,timing.startup,()=>cone(f,4.6*f.S.rng,2.0,{dmg:7*dmgMul(f),kind:"knock",kb:42,up:8,col,guardDmg:60}))}}
  if(f.isMe)pushState(true)}
 function jumpHeldFor(f){return f.isMe?jumpHeld:f.wantUp}
 // ---------- aerial combat ----------
@@ -201,7 +210,7 @@ function airM1(f,col){const A=f.airC;const ac=col===0xffffff?0x9ff0ff:col;
 function wallJump(f){f.wj=(f.wj||0)+1;f.vy=39;f.vx=f.wallN[0]*11;f.vz=f.wallN[1]*11;f.r=Math.atan2(f.wallN[0],f.wallN[1]);f.wallT=0;f.root=null;f.wjT=.35;
  Rig.play(f,"dashB",.42);FX.dust(f.x-f.wallN[0],f.y+1.5,f.z-f.wallN[1],5);FX.ring(f.x-f.wallN[0]*.9,f.y+2.5,f.z-f.wallN[1]*.9,0xffffff,3,.3,true,f.r);if(f.isMe){feed("WALL JUMP");pushState(true)}}
 function dash(f,dx,dz){
- if(f.dead)return;
+ if(f.dead||(mode==="duel"&&duelScore.finished))return;
  if(f.st!=="free"){// evasive
   if(f.evT>0)return;f.evT=pw("inf")&&f.isMe?1:5.5;interrupt(f);f.st="free";f.stT=0;f.inv=1.2;f.vy=14;f.y=Math.max(f.y,.5);const F=fwd(f);f.vx=-F[0]*20;f.vz=-F[1]*20;f.frozen=0;
   FX.ring(f.x,f.y+3,f.z,0xffffff,6,.4);FX.burst(f.x,f.y+3,f.z,0xffffff,14,12,.35,.35);if(f.isMe)FX.banner("EVASIVE","#fff");return}
@@ -210,7 +219,7 @@ function dash(f,dx,dz){
  else{const F=fwd(f);const dot=ddx*F[0]+ddz*F[1],crs=ddx*F[1]-ddz*F[0];dir=dot>.5?"F":dot<-.5?"B":crs>0?"R":"L";if(dir==="F"||!aimFor(f))f.r=Math.atan2(ddx,ddz),dir="F"}
  f.dashDir=dir;f.dashT=.24;f.dashV=[ddx*48,ddz*48];f.dashCD=(pw("inf")&&f.isMe?.25:1.5)/f.S.agi;f.inv=dir==="F"?0:.15;f.blk=false;
  Rig.play(f,"dash"+dir,.26);FX.dust(f.x,.3,f.z,4);if(f.isMe){FX.speed(.6);pushState(true)}}
-function jump(f){if(f.dead)return;
+function jump(f){if(f.dead||(mode==="duel"&&duelScore.finished))return;
  if(f.extT>0&&f.extTgt&&f.st==="free"&&!f.carry){extend(f);return}
  if(f.lock>0||f.st!=="free")return;
  if(!grounded(f)){if(f.wallT>0&&(f.wj||0)<3&&!f.carry)wallJump(f);else if(f.isMe&&insaneActive()&&!f.carry){f.vy=30;FX.ring(f.x,f.y+.3,f.z,0xff3b3b,4,.3)}return}
@@ -263,7 +272,7 @@ function tickStatus(f,dt){
  if(f.buff.spd>0)FX.aura(f,0xff3333,.3);
  const cdRate=(f.buff.haste>0?2:1)*dt;for(let i=0;i<4;i++)f.cd[i]=Math.max(0,f.cd[i]-cdRate);
  f.weaponCD=Math.max(0,(f.weaponCD||0)-dt);f.extT=Math.max(0,(f.extT||0)-dt);f.wallT=Math.max(0,(f.wallT||0)-dt);f.wjT=Math.max(0,(f.wjT||0)-dt);f.launchImm=Math.max(0,(f.launchImm||0)-dt);f.insaneHit=Math.max(0,(f.insaneHit||0)-dt);if(f.airC){f.airC.t-=dt;if(f.airC.t<=0)f.airC=null}
- f.m1CD=Math.max(0,f.m1CD-dt);f.m1T=Math.max(0,f.m1T-dt);f.dashCD=Math.max(0,f.dashCD-dt);f.evT=Math.max(0,f.evT-dt);f.inv=Math.max(0,f.inv-dt);f.lock=Math.max(0,f.lock-dt);
+ f.parryCD=Math.max(0,(f.parryCD||0)-dt);f.m1CD=Math.max(0,f.m1CD-dt);f.m1T=Math.max(0,f.m1T-dt);f.dashCD=Math.max(0,f.dashCD-dt);f.evT=Math.max(0,f.evT-dt);f.inv=Math.max(0,f.inv-dt);f.lock=Math.max(0,f.lock-dt);
  if(!f.blk)f.guard=Math.min(100,f.guard+dt*18);else f.blkT+=dt;
  // queued hits
  for(let i=f.pend.length-1;i>=0;i--){const p=f.pend[i];p.t-=dt;if(p.t<=0){f.pend.splice(i,1);p.fn()}}
@@ -281,13 +290,15 @@ function control(f,dt){// local player input
  const kw=((keys.KeyW)?1:0)-((keys.KeyS)?1:0)||-joy.z,kd=((keys.KeyD)?1:0)-((keys.KeyA)?1:0)||joy.x;
  const L=Math.hypot(kw,kd),wx=L?(C[0]*kw+R[0]*kd)/Math.max(1,L):0,wz=L?(C[1]*kw+R[1]*kd)/Math.max(1,L):0;
  f.inDir=[wx,wz];
+ if((L>.1||keys.KeyR||keys.KeyQ||keys.KeyF||md)&&f.act?.name==='emote'){f.act=null;f.lock=0;closeEmotes()}
  yaw+=((keys.ArrowLeft?1:0)-(keys.ArrowRight?1:0))*2.4*dt;pitch=clamp(pitch+((keys.ArrowUp?1:0)-(keys.ArrowDown?1:0))*1.65*dt,-.15,1.15);
- const canMove=f.st==="free"&&f.lock<=0&&f.dashT<=0&&!f.root;
- f.blk=!!(keys.KeyR)&&f.st==="free"&&f.lock<=0&&!f.carry&&grounded(f);if(!f.blk)f.blkT=0;
+ const canMove=f.st==="free"&&f.lock<=0&&f.dashT<=0&&!f.root&&!(mode==="duel"&&duelScore.finished);
+ const wasBlocking=f.blk;f.blk=!!keys.KeyR&&f.st==="free"&&f.lock<=0&&!f.carry&&grounded(f);
+ if(f.blk&&!wasBlocking){f.blkT=f.parryCD>0?1:0;f.parryCD=.65}
  const running=(keys.ShiftLeft||keys.ShiftRight||Math.hypot(joy.x,joy.z)>.85);
  let spd=(running?RUN:WALK)*f.S.spd*(pw("speed")?1.5:1)*(f.awT>0?1.15:1)*(f.buff.spd>0?1.4:1)*(f.slowT>0?.5:1)*(f.blk?.35:1)*(f.carry?.75:1)*(insaneActive()?1.6:1);
  f.ctrl=canMove;
- if(canMove&&L>.1&&!(f.wjT>0)){const s=Math.min(1,L);f.vx=wx*spd*s;f.vz=wz*spd*s;const tr=shiftLock?Math.atan2(C[0],C[1]):Math.atan2(wx,wz);let d=tr-f.r;while(d>Math.PI)d-=6.283;while(d<-Math.PI)d+=6.283;f.r+=d*Math.min(1,dt*14);f.mv=true}
+ if(canMove&&L>.1&&!(f.wjT>0)){const s=Math.min(1,L);const accel=1-Math.exp(-dt*22);f.vx+=(wx*spd*s-f.vx)*accel;f.vz+=(wz*spd*s-f.vz)*accel;const tr=shiftLock?Math.atan2(C[0],C[1]):Math.atan2(wx,wz);let d=tr-f.r;while(d>Math.PI)d-=6.283;while(d<-Math.PI)d+=6.283;f.r+=d*Math.min(1,dt*14);f.mv=true}
  else{f.mv=false;if(canMove&&grounded(f)){f.vx*=Math.exp(-20*dt);f.vz*=Math.exp(-20*dt)}}
  if(canMove)f.ph+=dt*(running?13:9)*Math.min(1,L);
  if(shiftLock&&!f.mv&&canMove){const target=Math.atan2(C[0],C[1]);let d=target-f.r;while(d>Math.PI)d-=6.283;while(d<-Math.PI)d+=6.283;f.r+=d*Math.min(1,dt*14)}
@@ -296,7 +307,10 @@ function control(f,dt){// local player input
 }
 // ---------- bots ----------
 function botThink(b,dt){
- const L=b.lv;b.think-=dt;b.wantUp=false;
+ const L=b.lv;b.think-=dt;
+ if(training.behavior==='passive'||training.behavior==='combo'){b.blk=false;b.ctrl=b.st==='free';b.vx*=Math.exp(-dt*20);b.vz*=Math.exp(-dt*20);animState(b,false,false);return}
+ if(training.behavior==='defensive'){b.ctrl=b.st==='free';b.blk=b.ctrl&&b.lock<=0;face(b,me.x,me.z);b.vx*=Math.exp(-dt*20);b.vz*=Math.exp(-dt*20);animState(b,false,false);return}
+ b.wantUp=false;
  let T=null,d=1e9;for(const t of foesOf(b)){const dd=Math.hypot(t.x-b.x,t.z-b.z);if(dd<d){d=dd;T=t}}
  if(!T){b.mv=false;b.ctrl=true;b.vx*=.8;b.vz*=.8;animState(b,false,false);return}
  if(b.st!=="free"){b.blk=false;if(L>=6&&b.st==="ragdoll"&&b.evT<=0&&Math.random()<dt*L*.08)dash(b);animState(b,false,false);b.ctrl=false;return}
@@ -351,24 +365,25 @@ function ultimate(){if(!insaneActive()||me.dead||ultCD>0||!free(me))return;ultCD
 let lastAn="",lastSt=0;
 function pushState(force){if(!ch||!me)return;bt=force?0:bt}
 function sendBots(){for(const b of bots){const a=b.act;ch.state({id:b.bid,n:b.name,x:+b.x.toFixed(2),y:+b.y.toFixed(2),z:+b.z.toFixed(2),r:+b.r.toFixed(2),hp:b.dead?0:Math.round(b.hp),mh:b.mhp,c:b.charId,k:0,w:0,an:b.anState,a:a?a.name+(a.name==="m1"?(b.anM1||0):""):"",as:0,aw:b.awT>0?1:0,cr:"",ph:+b.ph.toFixed(2),bot:1})}}
-function sendState(){const a=me.act;ch.state({obs:adminObserve?1:0,id:myId,n:pf.username,x:+me.x.toFixed(2),y:+me.y.toFixed(2),z:+me.z.toFixed(2),r:+me.r.toFixed(2),hp:me.dead?0:Math.round(me.hp),mh:me.mhp,c:pf.char,k:pf.skin||0,w:pf.weapon,an:me.anState,a:a?a.name+(a.name==="m1"?me.anM1:""):"",as:a?+(a.t).toFixed(2):0,aw:me.awT>0?1:0,cr:me.carry?me.carry.type:"",ph:+me.ph.toFixed(2),ins:insaneActive()?1:0})}
+function sendState(){const a=me.act;ch.state({obs:adminObserve?1:0,id:myId,n:pf.username,x:+me.x.toFixed(2),y:+me.y.toFixed(2),z:+me.z.toFixed(2),r:+me.r.toFixed(2),hp:me.dead?0:Math.round(me.hp),mh:me.mhp,c:pf.char,k:pf.skin||0,w:pf.weapon,an:me.anState,a:a?a.name+(a.name==="m1"?me.anM1:""):"",as:a?+(a.t).toFixed(2):0,aw:me.awT>0?1:0,cr:me.carry?me.carry.type:"",av:window.PC_AVATAR?.normalize(pf.avatar),ph:+me.ph.toFixed(2),ins:insaneActive()?1:0})}
 function onState(p){
  if(p.obs){const hidden=rem.get(p.id);if(hidden){removeFighter(hidden);rem.delete(p.id)}return}
  let r=rem.get(p.id);
- if(!r){const c=DT.CH[p.c]||DT.CH[0];const sk=DT.SKINS[p.k];r=makeFighter({name:p.n,charId:p.c||0,col:sk&&sk[1]!=null?sk[1]:c.col,glow:p.bot?0xff3344:(DT.WP[p.w]||DT.WP[0]).col,kit:DT.PIDX[c.pw]||0,skinId:p.k||0,rid:p.id,isRemote:true,isBotGhost:!!p.bot});r.S={dmg:1,spd:1,agi:1,rng:1};r.x=p.x;r.z=p.z;rem.set(p.id,r);
+ if(!r){const c=DT.CH[p.c]||DT.CH[0];const sk=DT.SKINS[p.k];r=makeFighter({name:p.n,charId:p.c||0,col:sk&&sk[1]!=null?sk[1]:c.col,glow:p.bot?0xff3344:(DT.WP[p.w]||DT.WP[0]).col,kit:DT.PIDX[c.pw]||0,skinId:p.k||0,avatar:p.av,rid:p.id,isRemote:true,isBotGhost:!!p.bot});r.S={dmg:1,spd:1,agi:1,rng:1};r.x=p.x;r.z=p.z;rem.set(p.id,r);
   if(!p.bot&&window.Backend.titles)window.Backend.titles([p.n]).then(o=>{if(o[p.n]){r.title=o[p.n];r.tag.last=-1;drawTag(r)}})}
  r.tx=p.x;r.ty=p.y;r.tz=p.z;r.r=p.r;r.hp=p.hp;r.mhp=p.mh;r.seen=performance.now();r.dead=p.hp<=0;r.anState=p.an||"idle";r.ph=p.ph||0;r.st=p.an==="stun"?"stun":p.an==="ragdoll"?"ragdoll":"free";
  if(p.a&&p.a!==r.lastA){const n=p.a.indexOf("m1")===0?"m1":p.a;if(n==="m1")Rig.play(r,"m1",.3,Rig.m1Keys(r,+p.a.slice(2)||0));else Rig.play(r,n,.4);if(Rig.A[n]&&["thrust","cast1","stomp","spin","rise","charge","barrage","sweep","kickup","finisher","awaken"].indexOf(n)>=0)FX.burst(r.x,r.y+3,r.z,r.kitDef.col,10,8,.35,.4)}
  r.lastA=p.a;if(p.aw&&!r.awT){r.awT=30;r.rig.glow.forEach(g=>{g.material=new THREE.MeshStandardMaterial({color:r.kitDef.col,emissive:r.kitDef.col,emissiveIntensity:1.4});g.visible=true})}if(!p.aw&&r.awT){r.awT=0;r.rig.glow.forEach(g=>g.visible=false)}
  drawTag(r)}
 function onHit(p){
- if(!me)return;
+ if(!me||(mode==="duel"&&duelScore.finished))return;
+ if(p.h&&!PC_COMBAT.hitAllowed(p.h,{x:p.ax,z:p.az},me))return;
  if(adminObserve&&p.to===myId)return;
  if(p.to!==myId){// a hit on one of my bots (private server host)
   if(p.k)return;const b=bots.find(x=>x.bid===p.to);if(b&&!b.dead){const src=rem.get(p.by)||{x:p.ax,z:p.az,rid:p.by};receive(b,Object.assign({},src,{rid:p.by,x:p.ax,z:p.az}),p.h||{dmg:5,kind:"light"})}return}
  if(p.k){if(mode==="duel"&&!p.bot&&!duelScore.finished){duelScore.mine++;duelUpdate()}if(p.bot){window.App.reward({coins:p.c||30,xp:p.xp||15,kills:1});feed("Bot KO! +"+(p.c||30)+" coins")}else if(mode==="duel"){feed("DUEL K.O. · "+duelScore.mine+"/5")}else{window.App.reward({coins:100,xp:40,wins:1});feed("KO! +100 coins")}FX.banner("K.O.","#ffd54a");return}
  me.lastBy=p.by;const src=rem.get(p.by)||{x:p.ax,z:p.az,rid:p.by};receive(me,Object.assign({},src,{rid:p.by,x:p.ax,z:p.az}),p.h||{dmg:5,kind:"light"})}
-function duelUpdate(){if(mode!=="duel")return;const text="DUEL · YOU "+duelScore.mine+" : "+duelScore.theirs+" OPPONENT";$("arena").textContent=text;if(duelScore.mine>=5||duelScore.theirs>=5){duelScore.finished=true;if(duelScore.mine>=5)window.App.reward({coins:250,xp:100,wins:1});FX.banner(duelScore.mine>=5?"DUEL VICTORY!":"DUEL DEFEAT",duelScore.mine>=5?"#ffd54a":"#ff5050");feed("First to 5 KOs reached. Return HOME to leave match.")}}
+function duelUpdate(){if(mode!=="duel")return;const text="DUEL · YOU "+duelScore.mine+" : "+duelScore.theirs+" OPPONENT";$("arena").textContent=text;if(duelScore.mine>=5||duelScore.theirs>=5){duelScore.finished=true;for(const f of [me,...bots,...rem.values()]){interrupt(f);f.vx=f.vz=0}keys={};md=0;if(duelScore.mine>=5)window.App.reward({coins:250,xp:100,wins:1});FX.banner(duelScore.mine>=5?"DUEL VICTORY!":"DUEL DEFEAT",duelScore.mine>=5?"#ffd54a":"#ff5050");feed("First to 5 KOs reached. Return HOME to leave match.")}}
 function onLeave(k){for(const [id,r] of rem)if(id===k||id.indexOf(k)===0){removeFighter(r);rem.delete(id)}}
 // ---------- HUD ----------
 function feed(t){$("feed").textContent=t;clearTimeout(feed.t);feed.t=setTimeout(()=>{$("feed").textContent=""},2500)}
@@ -386,7 +401,7 @@ function playEmote(id){
  closeEmotes();
  if(!me||me.dead||me.st!=="free"||me.lock>0)return;
  const pose=EMOTE_POSES[id%EMOTE_POSES.length];
- Rig.play(me,"emote",2.6,pose);me.lock=.25;
+ Rig.play(me,"emote",2.6,pose);if(id===2)me.act.loop=true;me.lock=0;
  FX.ring(me.x,.15,me.z,0xe6e6f0,3,.38);
  feed(["WAVE","CHEER","DANCE","BOW","VICTORY"][id%5]);
 }
@@ -415,18 +430,20 @@ function hud(){
  const ia=insaneActive();$("insB").classList.toggle("hide",!(window.App.insane&&App.insane()));$("insB").textContent=ia?"SUPER INSANE" :"INSANE · OFF";$("insB").classList.toggle("off",!ia);
  if(ia&&mvU)mvU.lastChild.textContent=ultCD>0?ultCD.toFixed(1):"";
  if(canTrain()){$("tLvl").textContent="Lv "+training.lvl;$("tAuto").textContent="AUTO: "+(training.auto?"ON":"OFF");$("tAuto").classList.toggle("act",training.auto);$("tCount").textContent=bots.filter(alive).length+" bots"}
+ const metrics=$('trainingMetrics');if(metrics)metrics.textContent=training.hits+' hits · '+training.damage.toFixed(1)+' damage · best '+training.best;
  const near=!me.carry&&World.nearestProp(me.x,me.z,3.2,true);$("grabHint").classList.toggle("hide",!near&&!me.carry);$("grabHint").textContent=me.carry?"[E] / click THROW":"[E] PICK UP";
 }
 // ---------- main ----------
 function start(o){
- closeEmotes();stop();pf=P();mode=o.mode;duelScore={mine:0,theirs:0,finished:false};lvl=o.level||1;host=!!o.host;training={lvl:mode==="grind"?lvl:3,auto:mode==="grind"};ultCD=0;botSeq=0;myId=pf.username+"_"+Math.random().toString(36).slice(2,6);label="";
- KITS=window.KITS;low=("ontouchstart" in window)||innerWidth<700;
+ closeEmotes();stop();pf=P();mode=o.mode;duelScore={mine:0,theirs:0,finished:false};lvl=o.level||1;host=!!o.host;training={lvl:mode==="grind"?lvl:3,auto:mode==="grind",behavior:"aggressive",damage:0,hits:0,lastHit:0,best:0};ultCD=0;botSeq=0;myId=pf.username+"_"+Math.random().toString(36).slice(2,6);label="";
+ KITS=window.KITS;const settings=window.PC_SETTINGS?.get()||{};low=settings.graphics==='low'||settings.graphics==='auto'&&(("ontouchstart" in window)||innerWidth<700);dist=settings.cam||13;
+ const medium=settings.graphics==='medium';
  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
  scene=new THREE.Scene();cam=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,1200);
- ren=new THREE.WebGLRenderer({antialias:!low,powerPreference:"high-performance"});ren.setSize(innerWidth,innerHeight);ren.setPixelRatio(Math.min(devicePixelRatio||1,low?1.25:1.75));
+ ren=new THREE.WebGLRenderer({antialias:!low,powerPreference:"high-performance"});ren.setSize(innerWidth,innerHeight);ren.setPixelRatio(Math.min(devicePixelRatio||1,low?1:medium?1.25:1.75));
  ren.shadowMap.enabled=true;ren.shadowMap.type=THREE.PCFSoftShadowMap;ren.toneMapping=THREE.ACESFilmicToneMapping;ren.toneMappingExposure=.83;
  document.body.appendChild(ren.domElement);
- Rig.setQuality(low);World.build(scene,{low,duel:mode==="duel"});FX.init(scene,cam,$("fxc"),low);if(low){cam.far=560;cam.updateProjectionMatrix();scene.fog.near=110;scene.fog.far=390}
+ Rig.setQuality(low);World.build(scene,{low,medium,duel:mode==="duel"});FX.init(scene,cam,$("fxc"),low);if(low){cam.far=560;cam.updateProjectionMatrix();scene.fog.near=110;scene.fog.far=390}
  const S=statsFor(pf),sk=DT.SKINS[pf.skin||0];
  me=makeFighter({name:pf.username,charId:pf.char,col:sk&&sk[1]!=null?sk[1]:S.c.col,glow:S.w.col,kit:S.kit,skinId:pf.skin||0,isMe:true});me.tag.s.visible=false;pistolSetup();if(pf.role==="mega"&&pf.on){adminFly=!!pf.on.fly;adminObserve=!!pf.on.observe;if(adminObserve)adminFly=true;if(adminObserve)me.rig.g.traverse(o=>{if(o.isMesh&&o.material){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){m.transparent=true;m.opacity=.42}}})}me.title=pf.title||"";me.S=S;me.hp=me.mhp=S.mhp;const sp=spawnPoint();me.x=sp[0];me.z=sp[1];me.ctrl=true;drawTag(me);
  if(mode==="online"||mode==="duel"){ch=window.Backend.join(o.room,{id:myId,name:pf.username},{state:onState,hit:onHit,leave:onLeave});
@@ -438,7 +455,7 @@ function start(o){
  if(mode==="grind"&&!label)label="GRIND LV"+lvl+" "+["ROOKIE","EASY","NORMAL","SKILLED","HARD","VETERAN","ELITE","MASTER","NIGHTMARE","IMPOSSIBLE"][lvl-1];
  $("arena").textContent=label;$("gameUI").classList.remove("hide");document.body.classList.add("ingame");
  if("ontouchstart" in window){$("touch").classList.remove("hide");$("hint").classList.add("hide")}
- buildMoves();combo={n:0,t:0};tgt=null;
+ buildMoves();combo={n:0,t:0};tgt=null;$("train").classList.toggle("compact",innerWidth<700);
  $("train").classList.toggle("hide",!canTrain());$("gAdmin").classList.toggle("hide",!(window.App.staff&&App.staff()));
  try{history.pushState({arena:1},"")}catch(e){}
  yaw=Math.PI*.25;pitch=.32;camT=null;spT=1;bt=0;time=0;t0=performance.now();on=true;raf=requestAnimationFrame(loop)}
@@ -499,7 +516,7 @@ function frame(rdt,draw){
  const dt=rdt*FX.timeScale(rdt);time+=dt;
  // local player
  if(me.dead){me.rt-=rdt;if(me.rt<=0)respawn()}
- tickStatus(me,dt);if(!me.dead&&me.hp>0&&me.hp<me.mhp&&me.st==="free"){me.hp=Math.min(me.mhp,me.hp+dt*2.5);drawTag(me)}if(!me.dead)control(me,dt);else{me.ctrl=false;animState(me,false,false)}
+ tickStatus(me,dt);if(!me.dead&&me.hp>0&&me.hp<me.mhp&&me.st==="free"&&time-(me.lastDamage||0)>5&&!me.blk&&!me.act){me.hp=Math.min(me.mhp,me.hp+dt*2.5);drawTag(me)}if(!me.dead)control(me,dt);else{me.ctrl=false;animState(me,false,false)}
  physics(me,dt);
  // bots
  if(canTrain()&&training.auto){const want=mode==="grind"?Math.min(3,1+Math.floor((training.lvl-1)/4)):1;if(bots.filter(alive).length<want){spT-=rdt;if(spT<=0){spawnBot(training.lvl);spT=2}}}
@@ -549,15 +566,18 @@ addEventListener("keyup",e=>{keys[e.code]=0;if(e.code==="Space")jumpHeld=false})
 addEventListener("blur",()=>{keys={};md=0;jumpHeld=false});
 addEventListener("mousedown",e=>{if(on&&e.target.tagName==="CANVAS"&&e.target!==$("fxc")){if(e.button===0)md=1;if(!document.pointerLockElement&&!("ontouchstart" in window)&&e.target.requestPointerLock)e.target.requestPointerLock()}});
 addEventListener("mouseup",()=>{md=0});
-addEventListener("mousemove",e=>{if(on&&document.pointerLockElement){yaw-=e.movementX*.0032;pitch+=e.movementY*.0028}});
+addEventListener("mousemove",e=>{if(on&&document.pointerLockElement){const sens=(window.PC_SETTINGS?.get().sens||100)/100;yaw-=e.movementX*.0032*sens;pitch+=e.movementY*.0028*sens}});
 addEventListener("wheel",e=>{if(on)dist=clamp(dist+e.deltaY*.01,7,24)},{passive:true});
 addEventListener("resize",()=>{if(ren){cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();ren.setSize(innerWidth,innerHeight);FX.resize()}});
 // touch: joystick, camera drag, buttons
 const acts={weapon:[()=>weaponMove(me)],m1:[()=>{md=1},()=>{md=0}],s0:[()=>useMove(me,0)],s1:[()=>useMove(me,1)],s2:[()=>useMove(me,2)],s3:[()=>useMove(me,3)],dash:[()=>dash(me,me.inDir?me.inDir[0]:0,me.inDir?me.inDir[1]:0)],aw:[()=>{if(me.awT>0)finisher(me);else awaken(me)}],
  jump:[()=>{jumpHeld=true;jump(me)},()=>{jumpHeld=false}],blk:[()=>{keys.KeyR=1;me.blkT=0},()=>{keys.KeyR=0}],grab:[()=>{if(me.carry){if(free(me))throwProp(me)}else if(free(me)){const p=World.nearestProp(me.x,me.z,3.5,true);if(p)pickup(me,p)}}]};
 document.querySelectorAll(".tb").forEach(b=>{const a=acts[b.dataset.a];if(!a)return;b.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();if(on&&me)a[0]()});if(a[1]){b.addEventListener("pointerup",a[1]);b.addEventListener("pointerleave",a[1]);b.addEventListener("pointercancel",a[1])}});
+document.querySelector(".trh").onclick=()=>$("train").classList.toggle("compact");
 $("tLvlDn").onclick=()=>{training.lvl=Math.max(1,training.lvl-1)};$("tLvlUp").onclick=()=>{training.lvl=Math.min(10,training.lvl+1)};
-$("tSpawn").onclick=trainSpawn;$("tAuto").onclick=()=>{training.auto=!training.auto;spT=1};$("tClear").onclick=()=>{bots.forEach(b=>{if(!b.dead){b.dead=true;b.rt=.4}})};
+$('trainingBehavior').onchange=e=>{training.behavior=e.target.value;for(const b of bots){b.blk=false;b.blkT=1}};
+ $('tReset').onclick=()=>{training.damage=training.hits=training.best=0;for(const b of bots){b.hp=b.mhp;b.dead=false;b.st='free';b.inv=0;b.burn=b.poison=null;interrupt(b);drawTag(b)}};
+ $("tSpawn").onclick=trainSpawn;$("tAuto").onclick=()=>{training.auto=!training.auto;spT=1};$("tClear").onclick=()=>{bots.forEach(b=>{if(!b.dead){b.dead=true;b.rt=.4}})};
 $("gHome").onclick=()=>window.App.go("menuScreen");$("gAdmin").onclick=()=>window.App.openAdmin(true);
 ["tLvlDn","tLvlUp","tSpawn","tAuto","tClear","gHome","gAdmin","leaveBtn"].forEach(id=>{const e=$(id);e.addEventListener("pointerdown",ev=>ev.stopPropagation());e.addEventListener("mousedown",ev=>ev.stopPropagation())});
 const jy=$("joy"),kn=$("knob");
@@ -571,5 +591,6 @@ cp.addEventListener("touchend",()=>{lt=null});
 function refresh(){if(!on)return;buildMoves();$("train").classList.toggle("hide",!canTrain())}
 function trainSpawn(){if(!canTrain()||!on)return;if(bots.filter(alive).length>=8){window.App.toast("Max 8 bots at once");return}spawnBot(training.lvl)}
 function adminMode(type,enabled){if(!on||!pf||pf.role!=="mega")return false;if(type==="fly"){adminFly=!!enabled;if(!adminFly&&adminObserve)adminObserve=false;}else if(type==="observe"){adminObserve=!!enabled;if(adminObserve)adminFly=true;me.rig.g.traverse(o=>{if(o.isMesh&&o.material){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){m.transparent=true;m.opacity=adminObserve?.42:1}}});}else return false;return true}
-return{start,stop,refresh,adminMode,toggleShiftLock:()=>shiftLock=!shiftLock,get shiftLock(){return shiftLock},get active(){return on},_debug:()=>({me,bots,World,K,useMove,m1,dash,awaken,finisher,pickup,throwProp,keys,setJump:v=>{jumpHeld=v},onState,onHit,rem,info:()=>{let m=0;scene.traverse(o=>{if(o.isMesh)m++});return{meshes:m,calls:ren.info.render.calls,tris:ren.info.render.triangles}},step:(n,d)=>{for(let i=0;i<n;i++)frame(d||1/60,false)},setYaw:v=>{yaw=v},joy,extend,ultimate,training,trainSpawn,insaneActive,wallJump,setMode:v=>{mode=v}})};
+return{start,stop,refresh,adminMode,toggleShiftLock:()=>shiftLock=!shiftLock,get shiftLock(){return shiftLock},get active(){return on},_debug:()=>({me,bots,World,K,useMove,m1,dash,awaken,finisher,pickup,throwProp,keys,setJump:v=>{jumpHeld=v},onState,onHit,rem,info:()=>{let m=0;scene.traverse(o=>{if(o.isMesh)m++});return{meshes:m,calls:ren.info.render.calls,tris:ren.info.render.triangles}},step:(n,d)=>{for(let i=0;i<n;i++)frame(d||1/60,false)},setYaw:v=>{yaw=v},joy,extend,ultimate,training,trainSpawn,receive,statsFor,playEmote,getCamera:()=>cam,getRenderer:()=>ren,stopLoop:()=>cancelAnimationFrame(raf),insaneActive,wallJump,setMode:v=>{mode=v}})};
 })();
+

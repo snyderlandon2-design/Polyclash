@@ -13,7 +13,7 @@ function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");cle
 function mega(){if(P&&P.role==='mega'){P.chars=DT.CH.map(c=>c.id);P.weapons=DT.WP.map(w=>w.id);P.skins=DT.SKINS.map((x,i)=>i)}}
 function save(){return B.save(P)}
 function hdr(){if(!P)return;$("who").textContent=P.username+(P.role!=="player"?" ["+P.role.toUpperCase()+"]":"")+(P.guest?" (guest)":"");$("coins").textContent=P.coins+" coins";
- $("stats").innerHTML=(P.title?'<span class="ttl">« '+esc(P.title)+' »</span>':"")+"Level "+lvOf(P)+" &nbsp;·&nbsp; "+P.wins+" wins &nbsp;·&nbsp; "+P.kills+" bot KOs &nbsp;·&nbsp; "+ownC().filter(i=>!(DT.CH[i]&&DT.CH[i].ex)).length+"/"+DT.NORMAL_CH+" fighters";
+ $("stats").innerHTML=(P.title?'<span class="ttl">« '+esc(P.title)+' »</span>':"")+"Level "+lvOf(P)+" &nbsp;·&nbsp; "+P.wins+" wins &nbsp;·&nbsp; "+P.kills+" bot KOs &nbsp;·&nbsp; "+ownC().filter(i=>!(DT.CH[i]&&DT.CH[i].ex)).length+"/"+DT.NORMAL_CH+" combat styles";
  const fc=DT.CH[P.char]||DT.CH[0];$("heroName").textContent=fc.name;$("heroSub").textContent=DT.RAR[fc.rar][0]+" · "+(P.xKit||fc.pw)+" power";$("heroName").style.color=hex(DT.RAR[fc.rar][1]);
  if($("menuScreen").classList.contains("on")&&window.Thumbs)Thumbs.hero($("heroCv"),P);
  $("adminBtn").classList.toggle("hide",!staff())}
@@ -36,7 +36,7 @@ function shop(){
 const ownC=()=>{const a=P.chars.slice();(P.xChars||[]).forEach(i=>{if(a.indexOf(i)<0)a.push(i)});return a};
 const ownW=()=>{const a=P.weapons.slice();(P.xWeapons||[]).forEach(i=>{if(a.indexOf(i)<0)a.push(i)});return a};
 function renderMoveLoadout(){
- const c=DT.CH[P.char],kit=DT.PIDX[P.xKit||c.pw]||0,all=[...window.KITS[kit].moves,...(window.PC_EXTRA_MOVES||[])];
+ const c=DT.CH[P.char],kit=DT.PIDX[c.pw]||0,all=[...window.KITS[kit].moves,...(window.PC_EXTRA_MOVES||[])];
  P.moveSlots=P.moveSlots||{};const slots=P.moveSlots[kit]||[0,1,2,3];
  $("moveLoadout").innerHTML='<h3>CHOOSE YOUR 4 MOVES</h3><p class="mu">Earn XP or buy move licenses in the Item Shop. Choose any four unlocked moves. Preview each move below before equipping.</p>'+slots.map((v,i)=>'<label class="lab">Move '+(i+1)+' <select data-slot="'+i+'">'+all.map((m,j)=>'<option value="'+j+'" '+(v===j?'selected':'')+' '+((m.unlockXP||0)>P.xp&&P.role!=="mega"&&!(P.boughtMoves||[]).includes(j-window.KITS[kit].moves.length)?'disabled':'')+'>'+esc(m.n)+(m.unlockXP?' · '+m.unlockXP+' XP':'')+'</option>').join("")+'</select></label>').join('');
  const preview=document.createElement("div");preview.id="movePreview";preview.style.cssText="margin:16px 0;padding:14px;text-align:left;border:1px solid #454851;border-radius:10px;background:#15161c";$("moveLoadout").appendChild(preview);
@@ -46,6 +46,7 @@ function renderMoveLoadout(){
  $("moveLoadout").querySelectorAll("select").forEach(el=>el.onchange=()=>{const next=slots.slice(),v=+el.value;if(next.some((n,i)=>i!==+el.dataset.slot&&n===v)){toast("Each move can only be equipped once");renderMoveLoadout();return}next[+el.dataset.slot]=v;P.moveSlots[kit]=next;save();toast("Move equipped")});
 }
 function locker(){
+ if(window.PC_AVATAR)PC_AVATAR.mount();
  const mg=P.role==="mega",oc=ownC(),ow=ownW();
  const nx=oc.filter(i=>DT.CH[i]&&DT.CH[i].ex).length,wx=ow.filter(i=>DT.WP[i]&&DT.WP[i].ex).length;$("lockInfo").textContent="Build your loadout · Level "+(P.lv[P.char]||1)+" · "+P.skins.length+" owned skins · "+ow.length+" weapons";
  ["tabC","tabW","tabS","tabM"].forEach((id,i)=>$(id).classList.toggle("on",tab==="cwsm"[i]));
@@ -205,3 +206,4 @@ B.session().then(p=>{if(p){P=p;mega();go("menuScreen")}});
 B.config().then(c=>{CFG=c;$("news").textContent=c.announce||""});
 return{P:()=>P,cfg:()=>CFG,pw,reward,toast,go,staff,insane,openAdmin,closeAdmin,save:()=>save()};
 })();
+

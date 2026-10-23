@@ -277,12 +277,12 @@ function control(f,dt){// local player input
  if(adminFly||adminObserve){const C=camFwd(),R=[-C[1],C[0]],forward=+(!!keys.KeyW)-+(!!keys.KeyS),strafe=+(!!keys.KeyD)-+(!!keys.KeyA),up=+(!!keys.Space)-+(!!keys.ArrowDown);const len=Math.max(1,Math.hypot(forward,strafe));const speed=keys.ShiftLeft?35:19;f.vx=(C[0]*forward+R[0]*strafe)/len*speed;f.vz=(C[1]*forward+R[1]*strafe)/len*speed;f.vy=up*speed;f.mv=!!(forward||strafe||up);f.anState=f.mv?"run":"idle";return}
 
  const C=camFwd(),R=[-C[1],C[0]];
- const kw=((keys.KeyW||keys.ArrowUp)?1:0)-((keys.KeyS||keys.ArrowDown)?1:0)||-joy.z,kd=((keys.KeyD)?1:0)-((keys.KeyA)?1:0)||joy.x;
+ const kw=((keys.KeyW)?1:0)-((keys.KeyS)?1:0)||-joy.z,kd=((keys.KeyD)?1:0)-((keys.KeyA)?1:0)||joy.x;
  const L=Math.hypot(kw,kd),wx=L?(C[0]*kw+R[0]*kd)/Math.max(1,L):0,wz=L?(C[1]*kw+R[1]*kd)/Math.max(1,L):0;
  f.inDir=[wx,wz];
- yaw+=((keys.ArrowLeft?1:0)-(keys.ArrowRight?1:0))*2.4*dt;
+ yaw+=((keys.ArrowLeft?1:0)-(keys.ArrowRight?1:0))*2.4*dt;pitch=clamp(pitch+((keys.ArrowUp?1:0)-(keys.ArrowDown?1:0))*1.65*dt,-.15,1.15);
  const canMove=f.st==="free"&&f.lock<=0&&f.dashT<=0&&!f.root;
- f.blk=!!(keys.KeyF)&&f.st==="free"&&f.lock<=0&&!f.carry&&grounded(f);if(!f.blk)f.blkT=0;
+ f.blk=!!(keys.KeyR)&&f.st==="free"&&f.lock<=0&&!f.carry&&grounded(f);if(!f.blk)f.blkT=0;
  const running=(keys.ShiftLeft||keys.ShiftRight||Math.hypot(joy.x,joy.z)>.85);
  let spd=(running?RUN:WALK)*f.S.spd*(pw("speed")?1.5:1)*(f.awT>0?1.15:1)*(f.buff.spd>0?1.4:1)*(f.slowT>0?.5:1)*(f.blk?.35:1)*(f.carry?.75:1)*(insaneActive()?1.6:1);
  f.ctrl=canMove;
@@ -291,7 +291,7 @@ function control(f,dt){// local player input
  if(canMove)f.ph+=dt*(running?13:9)*Math.min(1,L);
  if(shiftLock&&!f.mv&&canMove){const target=Math.atan2(C[0],C[1]);let d=target-f.r;while(d>Math.PI)d-=6.283;while(d<-Math.PI)d+=6.283;f.r+=d*Math.min(1,dt*14)}
  animState(f,f.mv,running);
- if(keys.KeyJ||md)m1(f);
+ if(keys.KeyF||md&&!pistolEquipped)m1(f);
 }
 // ---------- bots ----------
 function botThink(b,dt){
@@ -397,9 +397,9 @@ function start(o){
  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
  scene=new THREE.Scene();cam=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,1200);
  ren=new THREE.WebGLRenderer({antialias:!low,powerPreference:"high-performance"});ren.setSize(innerWidth,innerHeight);ren.setPixelRatio(Math.min(devicePixelRatio||1,low?1.25:1.75));
- ren.shadowMap.enabled=true;ren.shadowMap.type=THREE.PCFSoftShadowMap;ren.toneMapping=THREE.ACESFilmicToneMapping;ren.toneMappingExposure=1.25;
+ ren.shadowMap.enabled=true;ren.shadowMap.type=THREE.PCFSoftShadowMap;ren.toneMapping=THREE.ACESFilmicToneMapping;ren.toneMappingExposure=.83;
  document.body.appendChild(ren.domElement);
- Rig.setQuality(low);World.build(scene,{low,duel:mode==="duel"});FX.init(scene,cam,$("fxc"),low);if(low){cam.far=320;cam.updateProjectionMatrix();scene.fog.near=60;scene.fog.far=240}
+ Rig.setQuality(low);World.build(scene,{low,duel:mode==="duel"});FX.init(scene,cam,$("fxc"),low);if(low){cam.far=560;cam.updateProjectionMatrix();scene.fog.near=110;scene.fog.far=390}
  const S=statsFor(pf),sk=DT.SKINS[pf.skin||0];
  me=makeFighter({name:pf.username,charId:pf.char,col:sk&&sk[1]!=null?sk[1]:S.c.col,glow:S.w.col,kit:S.kit,skinId:pf.skin||0,isMe:true});me.tag.s.visible=false;pistolSetup();if(pf.role==="mega"&&pf.on){adminFly=!!pf.on.fly;adminObserve=!!pf.on.observe;if(adminObserve)adminFly=true;if(adminObserve)me.rig.g.traverse(o=>{if(o.isMesh&&o.material){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){m.transparent=true;m.opacity=.42}}})}me.title=pf.title||"";me.S=S;me.hp=me.mhp=S.mhp;const sp=spawnPoint();me.x=sp[0];me.z=sp[1];me.ctrl=true;drawTag(me);
  if(mode==="online"||mode==="duel"){ch=window.Backend.join(o.room,{id:myId,name:pf.username},{state:onState,hit:onHit,leave:onLeave});
@@ -472,7 +472,7 @@ function frame(rdt,draw){
  const dt=rdt*FX.timeScale(rdt);time+=dt;
  // local player
  if(me.dead){me.rt-=rdt;if(me.rt<=0)respawn()}
- tickStatus(me,dt);if(!me.dead)control(me,dt);else{me.ctrl=false;animState(me,false,false)}
+ tickStatus(me,dt);if(!me.dead&&me.hp>0&&me.hp<me.mhp&&me.st==="free"){me.hp=Math.min(me.mhp,me.hp+dt*2.5);drawTag(me)}if(!me.dead)control(me,dt);else{me.ctrl=false;animState(me,false,false)}
  physics(me,dt);
  // bots
  if(canTrain()&&training.auto){const want=mode==="grind"?Math.min(3,1+Math.floor((training.lvl-1)/4)):1;if(bots.filter(alive).length<want){spT-=rdt;if(spT<=0){spawnBot(training.lvl);spT=2}}}
@@ -514,9 +514,9 @@ addEventListener("keydown",e=>{if(!on||isTyping(e))return;if(["Space","ArrowUp",
  if(c==="KeyB"){const owned=pf.emotes||[];if(owned.length){const poses=[{rax:-2.5,rao:.2},{lax:-2.7,rax:-2.7},{lax:-.8,rax:-.8,llx:.5,rlx:-.5},{tx:.7,lax:.3,rax:.3},{lax:-3,rax:-3,tx:-.2}];Rig.play(me,"emote",1.6,[[0,{}],[.25,poses[owned[0]%5]],[.6,poses[owned[0]%5]],[1,{}]]);feed("EMOTE")}else feed("BUY AN EMOTE IN ITEM SHOP");return}
  if(c==="Space"){jumpHeld=true;if(!adminFly&&!adminObserve)jump(me)}
  else if(c==="Digit1"||c==="Numpad1")useMove(me,0);else if(c==="Digit2"||c==="Numpad2")useMove(me,1);else if(c==="Digit3"||c==="Numpad3")useMove(me,2);else if(c==="Digit4"||c==="Numpad4")useMove(me,3);else if(c==="Digit5"||c==="Numpad5")ultimate();else if(c==="Digit6"||c==="Numpad6")weaponMove(me);
- else if(c==="KeyQ")dash(me,me.inDir?me.inDir[0]:0,me.inDir?me.inDir[1]:0);else if(c==="KeyG")awaken(me);else if(c==="KeyR")finisher(me);
+ else if(c==="KeyQ")dash(me,me.inDir?me.inDir[0]:0,me.inDir?me.inDir[1]:0);else if(c==="KeyG")awaken(me);else if(c==="KeyT")finisher(me);
  else if(c==="KeyE"){if(me.carry){if(free(me))throwProp(me)}else if(free(me)){const p=World.nearestProp(me.x,me.z,3.2,true);if(p)pickup(me,p)}}
- else if(c==="KeyF"){me.blkT=0}});
+ else if(c==="KeyR"){me.blkT=0}});
 addEventListener("keyup",e=>{keys[e.code]=0;if(e.code==="Space")jumpHeld=false});
 addEventListener("blur",()=>{keys={};md=0;jumpHeld=false});
 addEventListener("mousedown",e=>{if(on&&e.target.tagName==="CANVAS"&&e.target!==$("fxc")){if(e.button===0)md=1;if(!document.pointerLockElement&&!("ontouchstart" in window)&&e.target.requestPointerLock)e.target.requestPointerLock()}});
@@ -526,7 +526,7 @@ addEventListener("wheel",e=>{if(on)dist=clamp(dist+e.deltaY*.01,7,24)},{passive:
 addEventListener("resize",()=>{if(ren){cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();ren.setSize(innerWidth,innerHeight);FX.resize()}});
 // touch: joystick, camera drag, buttons
 const acts={weapon:[()=>weaponMove(me)],m1:[()=>{md=1},()=>{md=0}],s0:[()=>useMove(me,0)],s1:[()=>useMove(me,1)],s2:[()=>useMove(me,2)],s3:[()=>useMove(me,3)],dash:[()=>dash(me,me.inDir?me.inDir[0]:0,me.inDir?me.inDir[1]:0)],aw:[()=>{if(me.awT>0)finisher(me);else awaken(me)}],
- jump:[()=>{jumpHeld=true;jump(me)},()=>{jumpHeld=false}],blk:[()=>{keys.KeyF=1;me.blkT=0},()=>{keys.KeyF=0}],grab:[()=>{if(me.carry){if(free(me))throwProp(me)}else if(free(me)){const p=World.nearestProp(me.x,me.z,3.5,true);if(p)pickup(me,p)}}]};
+ jump:[()=>{jumpHeld=true;jump(me)},()=>{jumpHeld=false}],blk:[()=>{keys.KeyR=1;me.blkT=0},()=>{keys.KeyR=0}],grab:[()=>{if(me.carry){if(free(me))throwProp(me)}else if(free(me)){const p=World.nearestProp(me.x,me.z,3.5,true);if(p)pickup(me,p)}}]};
 document.querySelectorAll(".tb").forEach(b=>{const a=acts[b.dataset.a];if(!a)return;b.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();if(on&&me)a[0]()});if(a[1]){b.addEventListener("pointerup",a[1]);b.addEventListener("pointerleave",a[1]);b.addEventListener("pointercancel",a[1])}});
 $("tLvlDn").onclick=()=>{training.lvl=Math.max(1,training.lvl-1)};$("tLvlUp").onclick=()=>{training.lvl=Math.min(10,training.lvl+1)};
 $("tSpawn").onclick=trainSpawn;$("tAuto").onclick=()=>{training.auto=!training.auto;spT=1};$("tClear").onclick=()=>{bots.forEach(b=>{if(!b.dead){b.dead=true;b.rt=.4}})};

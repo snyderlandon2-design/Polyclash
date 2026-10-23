@@ -104,9 +104,9 @@ function buildR6(look,glow){
  const hips=piv(0,2,0,root),torso=piv(0,1,0,hips);
  const material=color=>new three.MeshStandardMaterial({color,roughness:.8,metalness:0});
  const part=(parent,geometry,color,x,y,z)=>{const mesh=new three.Mesh(geometry,material(color));mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh};
- const skin=look.skinTheme===0?0xb7bec5:look.skin;
- const shirt=look.skinTheme===0?0xb7bec5:look.shirt;
- const pants=look.skinTheme===0?0xb7bec5:look.pants;
+ const skin=0xffd21f;
+ const shirt=look.botLevel?([0x2459d3,0x288a58,0x9b65d4,0xe07933,0xbf334b,0x4bc6d2,0xc49b2b,0x8641b6,0x22242e,0xf4f4f4][Math.min(10,Math.max(1,look.botLevel))-1]):0x1666d9;
+ const pants=0x36b443;
  const box=(w,h,d)=>rbox(w,h,d,.065);
  const chest=part(torso,box(2,2,1),shirt,0,0,0);
  const arm=side=>{const sp=piv(side*1.5,.95,0,torso),el=piv(0,0,0,sp);part(sp,box(1,2,1),skin,0,-1,0);return{sp,el}};

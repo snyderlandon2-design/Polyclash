@@ -92,7 +92,7 @@ function faceTex(look,ex){// ex: 0 normal, 1 angry/attacking, 2 hurt
 function lookFor(id,shirt,skinId){
  const ov=window.DATA&&DATA.CH[id]&&DATA.CH[id].arch;const a=ov!==undefined&&ov!==null?ov:Math.floor(id/20)%20;let s=(id*2654435761>>>0)||1;const r=()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return(s>>>0)/4294967296};
  const pants=[0x1c1c22,0x2a2f45,0x3b2a20,0x202a20,0x111111,0x4a4a52][Math.floor(r()*6)];
- const theme=skinId===undefined?0:skinId;return{id,arch:a,style:STYLE[a],skinTheme:theme,r6:true,shirt:shirt,accent:mixc(shirt,theme%2?0xffffff:0x000000,.42),pants:theme===0?0x999fa8:pants,skin:theme===0?0xaaaaaa:SKIN[Math.floor(r()*SKIN.length)],hair:HAIR[Math.floor(r()*HAIR.length)],eye:EYES[Math.floor(r()*EYES.length)],shoe:theme===0?0x777e88:[0xf2f2f2,0x1a1a1a,0xc62828,0x1565c0,0xd8ad3d][Math.floor(r()*5)]}
+ const theme=skinId===undefined?0:skinId;return{id,arch:a,style:STYLE[a],skinTheme:theme,skinName:window.DATA?.SKINS?.[theme]?.[0]||"",r6:true,shirt:shirt,accent:mixc(shirt,theme%2?0xffffff:0x000000,.42),pants:theme===0?0x999fa8:pants,skin:theme===0?0xaaaaaa:SKIN[Math.floor(r()*SKIN.length)],hair:HAIR[Math.floor(r()*HAIR.length)],eye:EYES[Math.floor(r()*EYES.length)],shoe:theme===0?0x777e88:[0xf2f2f2,0x1a1a1a,0xc62828,0x1565c0,0xd8ad3d][Math.floor(r()*5)]}
 }
 // ---------- body ----------
 const METAL=0xb9bec8,DMETAL=0x6d727c,LEATHER=0x5a3a22,WHITE=0xf3f3f3,BLACK=0x161618,GOLD=0xd8ad3d;

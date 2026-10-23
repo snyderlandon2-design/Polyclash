@@ -1,7 +1,7 @@
 /* PolyClash city brawler: JJS-style combat.
    M1 x4 (hits 1-3 stun, 4th knocks back) | hold Space + 4th = uppercut | in the air 4th = downslam
-   dash (Q) + M1 = dash punch | F block (tap right before a hit = parry) | 4th M1 / heavy moves break guard
-   Q while stunned/ragdolled = evasive | E pick up / throw props | G awaken | R finisher while awakened. */
+   dash (Q) + M1 = dash punch | R block (tap right before a hit = parry) | 4th M1 / heavy moves break guard
+   Q while stunned/ragdolled = evasive | E pick up / throw props | G awaken | T finisher while awakened. */
 window.Game=(function(){
 const $=id=>document.getElementById(id),DT=window.DATA;
 const P=()=>window.App.P(),pw=k=>window.App.pw(k);
@@ -372,7 +372,7 @@ function onLeave(k){for(const [id,r] of rem)if(id===k||id.indexOf(k)===0){remove
 // ---------- HUD ----------
 function feed(t){$("feed").textContent=t;clearTimeout(feed.t);feed.t=setTimeout(()=>{$("feed").textContent=""},2500)}
 let mvU=null;
-function buildMoves(){const k=me.kitDef,h=k.moves.map((m,i)=>'<button class="mv" data-m="'+i+'"><i>'+(i+1)+'</i><b>'+m.n+'</b><span class="cdv"></span></button>').join("")+'<button class="mv weapon" data-m="w"><i>6</i><b>WEAPON SKILL</b><span class="cdv"></span></button>'+'<button class="mv aw" data-m="g"><i>G</i><b>Awaken</b><span class="cdv"></span></button><button class="mv fin" data-m="r"><i>R</i><b>'+k.fin.n+'</b><span class="cdv"></span></button>'+(insaneActive()?'<button class="mv ult" data-m="u"><i>5</i><b>INSANE COMBO</b><span class="cdv"></span></button>':'');
+function buildMoves(){const k=me.kitDef,h=k.moves.map((m,i)=>'<button class="mv" data-m="'+i+'"><i>'+(i+1)+'</i><b>'+m.n+'</b><span class="cdv"></span></button>').join("")+'<button class="mv weapon" data-m="w"><i>6</i><b>WEAPON SKILL</b><span class="cdv"></span></button>'+'<button class="mv aw" data-m="g"><i>G</i><b>Awaken</b><span class="cdv"></span></button><button class="mv fin" data-m="r"><i>T</i><b>'+k.fin.n+'</b><span class="cdv"></span></button>'+(insaneActive()?'<button class="mv ult" data-m="u"><i>5</i><b>INSANE COMBO</b><span class="cdv"></span></button>':'');
  $("moves").innerHTML=h;$("moves").querySelectorAll(".mv").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();const m=b.dataset.m;if(m==="g")awaken(me);else if(m==="r")finisher(me);else if(m==="u")ultimate();else if(m==="w")weaponMove(me);else useMove(me,+m)}));mvU=$("moves").querySelector(".ult");
  $("hudName").textContent=pf.username+" · "+k.n+" "+(Rig.STYLE_NAMES[me.look.style]||"")}
 function hud(){

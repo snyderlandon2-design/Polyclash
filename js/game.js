@@ -321,8 +321,8 @@ function botThink(b,dt){
  b.mv=moving;animState(b,moving,d>14);
 }
 function spawnBot(L){L=clamp(L||training.lvl||lvl,1,10);
- const cid=Math.floor(Math.random()*(DT.NORMAL_CH||DT.CH.length)),c=DT.CH[cid],a=Math.random()*6.283;
- const b=makeFighter({name:"Bot Lv"+L,charId:cid,col:c.col,glow:0xff3344,kit:DT.PIDX[c.pw]||0,isBot:true,lv:L,think:0,bid:myId+"_b"+(++botSeq)});
+ const cid=0,c=DT.CH[0],a=Math.random()*6.283;
+ const b=makeFighter({name:"Bot Lv"+L,charId:cid,col:0x1666d9,glow:0xff3344,kit:DT.PIDX[c.pw]||0,isBot:true,lv:L,think:0,bid:myId+"_b"+(++botSeq)});
  const hp=Math.round((80+L*45)*window.App.cfg().botHp);b.hp=b.mhp=hp;b.S={dmg:.75+L*.11,spd:1,agi:1+L*.03,rng:1};
  for(let k=0;k<30;k++){b.x=me.x+Math.cos(a+k)*rnd(14,26);b.z=me.z+Math.sin(a+k)*rnd(14,26);if(!World.blocked(b.x,1,b.z))break}
  World.resolve(b);FX.ring(b.x,.3,b.z,0xff3344,6,.6);FX.pillar(b.x,b.z,0xff3344,8,1.4,.5);bots.push(b);drawTag(b);return b}

@@ -61,30 +61,18 @@ function build(sc,q){scene=sc;low=!!q.low;B.length=0;props.length=0;debris.lengt
  const sm=low?1024:2048;sun.shadow.mapSize.set(sm,sm);const sc2=sun.shadow.camera;sc2.left=-55;sc2.right=55;sc2.top=55;sc2.bottom=-55;sc2.near=10;sc2.far=300;sun.shadow.bias=-.0006;sun.shadow.normalBias=.4;scene.add(sun);scene.add(sun.target);
  // ground (sidewalk/concrete)
  const gnd=mesh(new (T().PlaneGeometry)(HALF*2+300,HALF*2+300),M(0x86847e),0,0,0);gnd.rotation.x=-Math.PI/2;gnd.castShadow=false;
- const road=M(0x2c2e33),line=new (T().MeshBasicMaterial)({color:0xf2c230}),white=new (T().MeshBasicMaterial)({color:0xeeeeee});
- const RD=[-120,-60,0,60,120],RW=16;
- RD.forEach(r=>{const a=mesh(new (T().PlaneGeometry)(RW,HALF*2),road,r,.02,0);a.rotation.x=-Math.PI/2;a.castShadow=false;const b=mesh(new (T().PlaneGeometry)(HALF*2,RW),road,0,.021,r);b.rotation.x=-Math.PI/2;b.castShadow=false});
- // lane dashes + crosswalks (instanced)
- const dashG=new (T().PlaneGeometry)(.35,3),N=[];
- RD.forEach(r=>{for(let s=-HALF;s<HALF;s+=8){if(RD.some(o=>Math.abs(s-o)<RW/2+1))continue;N.push([r,s,0],[s,r,1])}});
- const im=new (T().InstancedMesh)(dashG,line,N.length),o=new (T().Object3D)();N.forEach((n,i)=>{o.position.set(n[0],.03,n[1]);o.rotation.set(-Math.PI/2,0,n[2]?Math.PI/2:0);o.updateMatrix();im.setMatrixAt(i,o.matrix)});scene.add(im);
- const cw=[];RD.forEach(a=>RD.forEach(b=>{for(let k=-6;k<=6;k+=2){cw.push([a+k,b+RW/2+1.5,0],[a+k,b-RW/2-1.5,0],[a+RW/2+1.5,b+k,1],[a-RW/2-1.5,b+k,1])}}));
- const cg=new (T().PlaneGeometry)(.9,3),ci=new (T().InstancedMesh)(cg,white,cw.length);cw.forEach((n,i)=>{o.position.set(n[0],.03,n[1]);o.rotation.set(-Math.PI/2,0,n[2]?Math.PI/2:0);o.updateMatrix();ci.setMatrixAt(i,o.matrix)});scene.add(ci);
- // blocks between roads: centres at ±30, ±90, ±150
- const C=[-150,-90,-30,30,90,150];
- C.forEach(bx=>C.forEach(bz=>{
-  const plaza=Math.abs(bx)===30&&Math.abs(bz)===30;
-  if(plaza){plazaBlock(bx,bz);return}
-  const edge=Math.abs(bx)===150||Math.abs(bz)===150;
-  const n=Math.random()<.5?2:1;
-  if(n===1)building(bx,bz,rnd(26,38),rnd(26,38),edge?rnd(45,90):rnd(18,60));
-  else{const sx=Math.random()<.5;for(let i=-1;i<=1;i+=2){const w=sx?17:rnd(26,36),d=sx?rnd(26,36):17;building(bx+(sx?i*10.5:0),bz+(sx?0:i*10.5),w,d,edge?rnd(40,85):rnd(14,55))}}
-  sidewalkProps(bx,bz);
- }));
- // skyline beyond the boundary
- for(let i=0;i<40;i++){const a=i/40*6.283,R=rnd(200,260);const h=rnd(40,120),w=rnd(20,40);mesh(new (T().BoxGeometry)(w,h,w),M(0x7d8796),Math.cos(a)*R,h/2,Math.sin(a)*R,null,false)}
- // parked cars and cones on roads
- RD.forEach(r=>{for(let s=-150;s<=150;s+=30){if(Math.random()<.35)addProp("car",r+5.5,s+rnd(-6,6),0,[0xc62828,0x1565c0,0xeeeeee,0x222222,0xf9a825,0x2e7d32][Math.floor(Math.random()*6)]);if(Math.random()<.3)addProp("car",s+rnd(-6,6),r-5.5,Math.PI/2,[0xc62828,0x1565c0,0xeeeeee,0x222222,0xf9a825][Math.floor(Math.random()*5)]);if(Math.random()<.25)addProp("cone",r+rnd(-3,3),s+rnd(-8,8))}});
+ // Open battleground: a broad, uncluttered central combat field with distant city cover.
+ const tile=M(0xa7b0b8,{roughness:.95}),edge=M(0x636b74),grass=M(0x66835d);
+ const floor=mesh(new (T().PlaneGeometry)(240,240),tile,0,.035,0);floor.rotation.x=-Math.PI/2;floor.castShadow=false;
+ for(let n=-116;n<=116;n+=8){const line=mesh(new (T().PlaneGeometry)(.045,232),edge,n,.043,0);line.rotation.x=-Math.PI/2;line.castShadow=false;const cross=mesh(new (T().PlaneGeometry)(232,.045),edge,0,.044,n);cross.rotation.x=-Math.PI/2;cross.castShadow=false}
+ const park=mesh(new (T().PlaneGeometry)(HALF*2,HALF*2),grass,0,.012,0);park.rotation.x=-Math.PI/2;park.castShadow=false;
+ // Buildings occupy only the far perimeter, preserving a generous central arena.
+ for(const x of [-147,-126,126,147])for(const z of [-147,-126,126,147]){
+  if(Math.abs(x)===126&&Math.abs(z)===126)continue;
+  building(x,z,14,14,rnd(18,42));
+ }
+ // No parked cars, traffic props, or obstacles in the fighting lanes.
+
 }
 function plazaBlock(bx,bz){
  const sx=Math.sign(bx),sz=Math.sign(bz);

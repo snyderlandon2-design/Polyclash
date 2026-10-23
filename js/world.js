@@ -55,14 +55,14 @@ function addProp(type,x,z,ry,col){const def=PT[type],g=new (T().Group)();def.mk(
 // ---------- build ----------
 function build(sc,q){scene=sc;low=!!q.low;B.length=0;props.length=0;debris.length=0;decals.length=0;smashed.length=0;
  WIN=winTex();CRACK=crackTex();
- scene.background=new (T().Color)(0x9fbfe0);scene.fog=new (T().Fog)(0xc9d6e3,90,320);sky();
- hemi=new (T().HemisphereLight)(0xdde8ff,0x4a4038,.75);scene.add(hemi);
- sun=new (T().DirectionalLight)(0xfff1dc,1.05);sun.position.set(60,110,40);sun.castShadow=true;
+ scene.background=new (T().Color)(0x8797a6);scene.fog=new (T().Fog)(0x8797a6,175,530);sky();
+ hemi=new (T().HemisphereLight)(0xc8d6df,0x454947,.54);scene.add(hemi);
+ sun=new (T().DirectionalLight)(0xe3e7ef,.75);sun.position.set(60,110,40);sun.castShadow=true;
  const sm=low?1024:2048;sun.shadow.mapSize.set(sm,sm);const sc2=sun.shadow.camera;sc2.left=-55;sc2.right=55;sc2.top=55;sc2.bottom=-55;sc2.near=10;sc2.far=300;sun.shadow.bias=-.0006;sun.shadow.normalBias=.4;scene.add(sun);scene.add(sun.target);
  // ground (sidewalk/concrete)
  const gnd=mesh(new (T().PlaneGeometry)(HALF*2+300,HALF*2+300),M(0x86847e),0,0,0);gnd.rotation.x=-Math.PI/2;gnd.castShadow=false;
  // Open battleground: a broad, uncluttered central combat field with distant city cover.
- const tile=M(0xa7b0b8,{roughness:.95}),edge=M(0x636b74),grass=M(0x66835d);
+ const tile=M(0x777c84,{roughness:.98}),edge=M(0x636b74),grass=M(0x66835d);
  const floor=mesh(new (T().PlaneGeometry)(240,240),tile,0,.035,0);floor.rotation.x=-Math.PI/2;floor.castShadow=false;
  for(let n=-116;n<=116;n+=8){const line=mesh(new (T().PlaneGeometry)(.045,232),edge,n,.043,0);line.rotation.x=-Math.PI/2;line.castShadow=false;const cross=mesh(new (T().PlaneGeometry)(232,.045),edge,0,.044,n);cross.rotation.x=-Math.PI/2;cross.castShadow=false}
  const park=mesh(new (T().PlaneGeometry)(HALF*2,HALF*2),grass,0,.012,0);park.rotation.x=-Math.PI/2;park.castShadow=false;
@@ -71,6 +71,8 @@ function build(sc,q){scene=sc;low=!!q.low;B.length=0;props.length=0;debris.lengt
   if(Math.abs(x)===126&&Math.abs(z)===126)continue;
   building(x,z,14,14,rnd(18,42));
  }
+ // Sparse destructible scenery and throwable trees at the edge of the arena.
+ if(!q.duel)for(const x of [-108,-82,82,108])for(const z of [-108,108]){addProp("tree",x,z,0)}
  // No parked cars, traffic props, or obstacles in the fighting lanes.
 
 }
